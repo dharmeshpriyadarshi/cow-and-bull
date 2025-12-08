@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Breaker Duel</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Main Game Container -->
+    <div id="game-container" class="w-full max-w-4xl bg-white shadow-2xl rounded-xl p-6 md:p-10 border-t-4 border-indigo-600">
+        <h1 class="4xl font-extrabold text-center mb-2 text-indigo-800">Code Breaker Duel</h1>
+        <p class="text-center text-gray-500 mb-8">A real-time 4-digit number guessing game.</p>
+
+        <!-- Dynamic Status Bar -->
+        <div id="status-bar" class="text-center p-3 mb-6 rounded-lg font-semibold transition-all duration-300">
+            <!-- Content changes dynamically: "Waiting for player 2", "Your Turn", "Opponent's Turn" -->
+        </div>
+
+        <!-- Section 1: Connection & Setup -->
+        <div id="setup-view">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">1. Create or Join Game</h2>
+            <div class="space-y-4">
+                <!-- Create Game -->
+                <div class="p-4 border border-indigo-200 rounded-lg bg-indigo-50">
+                    <button id="create-game-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-md">
+                        Create New Game
+                    </button>
+                </div>
+
+                <!-- Join Game -->
+                <div class="p-4 border border-gray-200 rounded-lg">
+                    <label for="join-game-id" class="block text-sm font-medium text-gray-700 mb-2">Or Join by Game ID (6 digits)</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="join-game-id" maxlength="6" class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-lg tracking-widest text-center" placeholder="e.g. 1A2B3C">
+                        <button id="join-game-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200">
+                            Join
+                        </button>
+                    </div>
+                </div>
+                <p id="setup-message" class="text-sm text-red-500 h-5"></p>
+            </div>
+        </div>
+
+        <!-- Section 2: Game Details & Set Code -->
+        <div id="code-setup-view" class="hidden">
+            <div class="flex flex-col md:flex-row justify-between items-center bg-gray-100 p-4 rounded-lg mb-6">
+                <p class="text-sm font-medium text-gray-600">Your ID: <span id="my-user-id" class="font-mono text-xs bg-gray-200 px-2 py-0.5 rounded"></span></p>
+                <p class="text-sm font-medium text-gray-600 mt-2 md:mt-0">Game ID: <span id="current-game-id" class="font-mono text-indigo-700 text-lg bg-indigo-100 px-2 py-0.5 rounded-md cursor-pointer" onclick="copyGameId()"></span></p>
+            </div>
+
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">2. Set Your Secret 4-Digit Code</h2>
+            <div class="flex flex-col md:flex-row items-end space-y-4 md:space-y-0 md:space-x-4">
+                <div class="flex-grow w-full">
+                    <label for="secret-code-input" class="block text-sm font-medium text-gray-700 mb-1">Your Secret Code (4 unique digits 0-9)</label>
+                    <input type="text" id="secret-code-input" maxlength="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 text-3xl tracking-widest text-center font-mono" placeholder="1234">
+                </div>
+                <button id="set-code-btn" class="w-full md:w-auto flex-shrink-0 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 shadow-md">
+                    Lock In Code
+                </button>
+            </div>
+            <p id="code-setup-message" class="text-sm text-red-500 h-5 mt-2"></p>
+        </div>
+
+        <!-- Section 3: Gameplay Interface -->
+        <div id="gameplay-view" class="hidden mt-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Left: Guessing Area -->
+                <div id="guessing-area">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">3. Make Your Guess</h2>
+                    <div class="bg-indigo-50 p-6 rounded-xl shadow-inner border border-indigo-200">
+                        <div class="space-y-4">
+                            <label for="guess-input" class="block text-sm font-medium text-indigo-700">Guess Opponent's Code (4 unique digits)</label>
+                            <input type="text" id="guess-input" maxlength="4" class="w-full p-3 border-2 border-indigo-400 rounded-lg text-3xl tracking-widest text-center font-mono focus:ring-indigo-500 focus:border-indigo-500" placeholder="? ? ? ?">
+                            <button id="submit-guess-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition duration-200 shadow-lg disabled:opacity-50" disabled>
+                                Submit Guess
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Game History -->
+                <div id="history-area">
+                    <h2 class="2xl font-bold text-gray-700 mb-4">Game History</h2>
+                    <div class="overflow-y-auto max-h-[400px] border border-gray-200 rounded-lg shadow-inner">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Turn</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Guess</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Bulls (✓)</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Cows (~)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="guess-history-body" class="bg-white divide-y divide-gray-100">
+                                <!-- History Rows go here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <p class="text-sm text-gray-500 mt-4 text-center">
+                **Bulls (✓):** Correct digit, correct position. &bull; 
+                **Cows (~):** Correct digit, wrong position.
+            </p>
+        </div>
+        
+        <!-- Win/Loss Modal Placeholder -->
+        <div id="modal-container" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4">
+            <div id="game-modal" class="bg-white rounded-xl shadow-2xl p-8 max-w-sm text-center">
+                <h3 id="modal-title" class="text-3xl font-bold mb-4"></h3>
+                <p id="modal-message" class="text-gray-700 mb-6"></p>
+                <button onclick="window.location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+                    Start New Game
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Firebase Imports and Script -->
+    <script type="module">
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        
+        // >>> USER ACTION REQUIRED: If running locally (VS Code/GitHub), replace the content of 'myLocalConfig'
+        // >>> You MUST paste your Firebase Web App configuration here (e.g., apiKey, projectId, etc.).
+        const myLocalConfig = {
+          apiKey: "AIzaSyBnYMPMXxEZGle2C13lOsppEZeWYDW17c", 
+          authDomain: "code-breaker-duel.firebaseapp.com",
+          projectId: "code-breaker-duel",
+          storageBucket: "code-breaker-duel.appspot.com",
+          messagingSenderId: "165393867049",
+          appId: "1:165393867049:web:2d50c1c9073a38d4b28038",
+          measurementId: "G-NDKVEEE4YR"
+        }; // <-- PASTE YOUR CONFIG OBJECT HERE
+        
+        // Use the environment config if available, otherwise use the user's local config.
+        const firebaseConfig = (typeof __firebase_config !== 'undefined' && __firebase_config !== 'null' && Object.keys(JSON.parse(__firebase_config)).length > 0)
+            ? JSON.parse(__firebase_config)
+            : myLocalConfig;
+
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, getDocs, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Initialize Firebase
+        setLogLevel('Debug');
+        let app, db, auth;
+        let userId = null;
+        let isAuthReady = false;
+        let currentGameId = null;
+        let playerNumber = null; // 'p1' or 'p2'
+
+        // DOM Elements
+        const setupView = document.getElementById('setup-view');
+        const codeSetupView = document.getElementById('code-setup-view');
+        const gameplayView = document.getElementById('gameplay-view');
+        const statusBar = document.getElementById('status-bar');
+        const setupMessage = document.getElementById('setup-message');
+        const codeSetupMessage = document.getElementById('code-setup-message');
+        const guessInput = document.getElementById('guess-input');
+        const submitGuessBtn = document.getElementById('submit-guess-btn');
+        const historyBody = document.getElementById('guess-history-body');
+        const modalContainer = document.getElementById('modal-container');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+
+        // Utility Functions
+        function generateGameId() {
+            const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            let id = '';
+            for (let i = 0; i < 6; i++) {
+                id += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return id;
+        }
+
+        function validateCode(code) {
+            if (code.length !== 4) return "Code must be exactly 4 digits.";
+            if (!/^\d{4}$/.test(code)) return "Code must contain only digits (0-9).";
+            const uniqueChars = new Set(code);
+            if (uniqueChars.size !== 4) return "All 4 digits must be unique.";
+            return null;
+        }
+        
+        function copyGameId() {
+            const gameIdElement = document.getElementById('current-game-id');
+            const gameId = gameIdElement.textContent;
+            
+            // Create a temporary input element
+            const tempInput = document.createElement('input');
+            tempInput.value = gameId;
+            document.body.appendChild(tempInput);
+            
+            // Select the text field
+            tempInput.select();
+            tempInput.setSelectionRange(0, 99999); // For mobile devices
+            
+            // Copy the text inside the text field
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    const originalText = gameIdElement.textContent;
+                    gameIdElement.textContent = 'Copied!';
+                    setTimeout(() => gameIdElement.textContent = originalText, 1500);
+                } else {
+                    console.error("Fallback copy method failed.");
+                }
+            } catch (err) {
+                console.error("Copy operation failed:", err);
+            }
+            
+            // Remove the temporary input element
+            document.body.removeChild(tempInput);
+        }
+        window.copyGameId = copyGameId; // Make it globally accessible for onclick
+
+        function setStatus(message, colorClass = 'bg-gray-200 text-gray-800') {
+            statusBar.className = `text-center p-3 mb-6 rounded-lg font-semibold ${colorClass} transition-all duration-300`;
+            statusBar.textContent = message;
+        }
+
+        // Core Game Logic: Calculate Bulls and Cows
+        function calculateFeedback(guess, secret) {
+            let bulls = 0;
+            let cows = 0;
+            
+            // 1. Calculate Bulls (Correct digit, correct position)
+            const secretArr = secret.split('');
+            const guessArr = guess.split('');
+
+            for (let i = 0; i < 4; i++) {
+                if (guessArr[i] === secretArr[i]) {
+                    bulls++;
+                    // Mark as used so they don't count towards cows
+                    secretArr[i] = null;
+                    guessArr[i] = null;
+                }
+            }
+
+            // 2. Calculate Cows (Correct digit, wrong position)
+            for (let i = 0; i < 4; i++) {
+                if (guessArr[i] !== null) { // If not already counted as a bull
+                    const matchIndex = secretArr.findIndex(s => s === guessArr[i]);
+                    if (matchIndex !== -1) {
+                        cows++;
+                        secretArr[matchIndex] = null; // Mark as used
+                    }
+                }
+            }
+
+            return { bulls, cows };
+        }
+
+        // --- Firebase Interaction Functions ---
+
+        async function createGame() {
+            try {
+                const gameId = generateGameId();
+                const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
+                
+                await setDoc(gameRef, {
+                    id: gameId,
+                    p1_id: userId,
+                    p2_id: null,
+                    p1_secret: null,
+                    p2_secret: null,
+                    p1_guesses: [],
+                    p2_guesses: [],
+                    turn: 'p1', // P1 always goes first
+                    status: 'waiting',
+                    createdAt: Date.now()
+                });
+
+                joinGame(gameId);
+
+            } catch (error) {
+                console.error("Error creating game:", error);
+                setupMessage.textContent = "Error creating game. Try again.";
+            }
+        }
+
+        async function joinGame(id) {
+            const gameIdInput = document.getElementById('join-game-id').value.toUpperCase();
+            currentGameId = id || gameIdInput;
+
+            if (!currentGameId || currentGameId.length !== 6) {
+                setupMessage.textContent = "Please enter a valid 6-character Game ID.";
+                return;
+            }
+
+            const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', currentGameId);
+            
+            try {
+                // Check if the game exists and if we are player 1 or 2
+                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'games'), where('id', '==', currentGameId));
+                const gameSnap = await getDocs(q);
+
+                if (gameSnap.empty) {
+                    setupMessage.textContent = `Game ID "${currentGameId}" not found.`;
+                    return;
+                }
+                
+                const gameData = gameSnap.docs[0].data();
+                
+                if (gameData.p1_id === userId) {
+                    playerNumber = 'p1';
+                } else if (gameData.p2_id === userId) {
+                    playerNumber = 'p2';
+                } else if (gameData.p2_id === null) {
+                    // Claim Player 2 spot
+                    await updateDoc(gameRef, {
+                        p2_id: userId,
+                        status: 'setup'
+                    });
+                    playerNumber = 'p2';
+                } else {
+                    setupMessage.textContent = "This game is full.";
+                    return;
+                }
+
+                // Transition to code setup view
+                document.getElementById('current-game-id').textContent = currentGameId;
+                document.getElementById('my-user-id').textContent = userId;
+                setupView.classList.add('hidden');
+                codeSetupView.classList.remove('hidden');
+
+                listenToGame(gameRef);
+
+            } catch (error) {
+                console.error("Error joining game:", error);
+                setupMessage.textContent = "Error joining game. Check console for details.";
+            }
+        }
+
+        async function setSecretCode() {
+            const secretCode = document.getElementById('secret-code-input').value;
+            const validationError = validateCode(secretCode);
+            if (validationError) {
+                codeSetupMessage.textContent = validationError;
+                return;
+            }
+            codeSetupMessage.textContent = '';
+            
+            const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', currentGameId);
+            
+            try {
+                const updateData = {};
+                updateData[`${playerNumber}_secret`] = secretCode;
+
+                await updateDoc(gameRef, updateData);
+
+                setStatus("Code locked in! Waiting for the other player...", 'bg-yellow-100 text-yellow-800');
+                document.getElementById('secret-code-input').disabled = true;
+                document.getElementById('set-code-btn').disabled = true;
+
+            } catch (error) {
+                console.error("Error setting code:", error);
+                codeSetupMessage.textContent = "Error setting code. Try again.";
+            }
+        }
+
+        async function submitGuess() {
+            const guess = guessInput.value;
+            const validationError = validateCode(guess);
+            if (validationError) {
+                setStatus(validationError, 'bg-red-100 text-red-800');
+                return;
+            }
+            
+            const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', currentGameId);
+
+            try {
+                // Get current game state to find the opponent's secret
+                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'games'), where('id', '==', currentGameId));
+                const gameSnap = await getDocs(q);
+                const gameData = gameSnap.docs[0].data();
+
+                const opponentNumber = playerNumber === 'p1' ? 'p2' : 'p1';
+                const opponentSecret = gameData[`${opponentNumber}_secret`];
+                
+                if (!opponentSecret) {
+                     setStatus("Opponent hasn't set their code yet!", 'bg-red-100 text-red-800');
+                     return;
+                }
+
+                const { bulls, cows } = calculateFeedback(guess, opponentSecret);
+                
+                const newGuess = {
+                    guess: guess,
+                    bulls: bulls,
+                    cows: cows,
+                    player: playerNumber,
+                    timestamp: Date.now()
+                };
+
+                const nextTurn = opponentNumber;
+                let newStatus = gameData.status;
+                let winner = null;
+
+                if (bulls === 4) {
+                    newStatus = `${playerNumber}_won`;
+                    winner = playerNumber;
+                }
+
+                const updatePayload = {
+                    [`${playerNumber}_guesses`]: arrayUnion(newGuess),
+                    turn: nextTurn,
+                    status: newStatus,
+                };
+
+                await updateDoc(gameRef, updatePayload);
+                
+                guessInput.value = ''; // Clear input
+                submitGuessBtn.disabled = true;
+
+            } catch (error) {
+                console.error("Error submitting guess:", error);
+                setStatus("An error occurred during guess submission.", 'bg-red-100 text-red-800');
+            }
+        }
+
+        // --- Real-time Listener and Renderer ---
+
+        function listenToGame(gameRef) {
+            onSnapshot(gameRef, (docSnap) => {
+                if (!docSnap.exists()) {
+                    setStatus("Game was deleted.", 'bg-red-500 text-white');
+                    return;
+                }
+
+                const game = docSnap.data();
+                const opponentNumber = playerNumber === 'p1' ? 'p2' : 'p1';
+                const mySecretIsSet = !!game[`${playerNumber}_secret`];
+                const opponentSecretIsSet = !!game[`${opponentNumber}_secret`];
+
+                // 1. Handle Game Flow
+                if (game.status === 'waiting') {
+                    if (playerNumber === 'p1') {
+                        setStatus("Waiting for Player 2 to join (Share Game ID above).", 'bg-yellow-100 text-yellow-800');
+                    } else if (playerNumber === 'p2') {
+                        setStatus("You are Player 2. Set your code!", 'bg-yellow-100 text-yellow-800');
+                    }
+                    return; // Stay in setup view or code setup view
+                } 
+
+                if (game.status === 'setup' || (mySecretIsSet && !opponentSecretIsSet)) {
+                     // Hide setup, show code setup
+                    setupView.classList.add('hidden');
+                    codeSetupView.classList.remove('hidden');
+                    gameplayView.classList.add('hidden');
+
+                    if (mySecretIsSet && opponentSecretIsSet) {
+                        setStatus("Codes are set! Game starting...", 'bg-green-100 text-green-800');
+                    } else if (mySecretIsSet) {
+                        setStatus("Code locked in! Waiting for opponent to set their code.", 'bg-yellow-100 text-yellow-800');
+                    } else {
+                        setStatus("Set your secret code to begin.", 'bg-indigo-100 text-indigo-800');
+                    }
+                    return; // Don't proceed to game view yet
+                }
+
+                if (game.status === 'in_progress' || game.status === 'setup' || (mySecretIsSet && opponentSecretIsSet)) {
+                    // Transition to gameplay
+                    codeSetupView.classList.add('hidden');
+                    gameplayView.classList.remove('hidden');
+                }
+
+                // 2. Handle Game Status (Win/Loss)
+                if (game.status.includes('_won')) {
+                    modalContainer.classList.remove('hidden');
+                    if (game.status === `${playerNumber}_won`) {
+                        modalTitle.textContent = "YOU WON!";
+                        modalMessage.textContent = `Congratulations! You cracked the code (${game[`${opponentNumber}_secret`]}) and are the Code Breaker Champion!`;
+                        modalTitle.className = 'text-3xl font-bold mb-4 text-green-600';
+                    } else {
+                        modalTitle.textContent = "YOU LOST!";
+                        modalMessage.textContent = `The opponent cracked your code! Their secret was: ${game[`${opponentNumber}_secret`]}. Try again!`;
+                        modalTitle.className = 'text-3xl font-bold mb-4 text-red-600';
+                    }
+                    submitGuessBtn.disabled = true;
+                    guessInput.disabled = true;
+                    return;
+                }
+
+                // 3. Handle Turn and UI State
+                const isMyTurn = game.turn === playerNumber;
+
+                if (isMyTurn) {
+                    setStatus("Your Turn! Enter your 4-digit guess below.", 'bg-green-200 text-green-800');
+                    submitGuessBtn.disabled = false;
+                    guessInput.disabled = false;
+                } else {
+                    setStatus("Opponent's Turn. Awaiting their move...", 'bg-indigo-200 text-indigo-800');
+                    submitGuessBtn.disabled = true;
+                    guessInput.disabled = true;
+                }
+
+
+                // 4. Render History
+                renderHistory(game, playerNumber, opponentNumber);
+            });
+        }
+
+        function renderHistory(game, myPlayer, oppPlayer) {
+            // Combine both players' guesses and sort by timestamp
+            const allGuesses = [
+                ...game.p1_guesses.map(g => ({ ...g, player: 'p1' })),
+                ...game.p2_guesses.map(g => ({ ...g, player: 'p2' }))
+            ].sort((a, b) => a.timestamp - b.timestamp);
+
+            historyBody.innerHTML = '';
+            
+            // Render history for the player whose code was guessed
+            allGuesses.forEach((g, index) => {
+                const turnNumber = Math.ceil((index + 1) / 2);
+                const row = historyBody.insertRow();
+                row.className = g.player === myPlayer ? 'bg-indigo-50 font-medium' : 'bg-white';
+
+                const turnCell = row.insertCell();
+                turnCell.textContent = turnNumber;
+                turnCell.className = 'px-4 py-2 text-sm text-gray-800';
+                
+                const guessCell = row.insertCell();
+                guessCell.textContent = g.guess;
+                guessCell.className = 'px-4 py-2 text-sm font-mono text-center tracking-widest';
+                
+                const bullsCell = row.insertCell();
+                bullsCell.innerHTML = `<span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-green-100 text-green-700 font-bold">${g.bulls}</span>`;
+                bullsCell.className = 'px-4 py-2 text-sm text-center';
+                
+                const cowsCell = row.insertCell();
+                cowsCell.innerHTML = `<span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-yellow-100 text-yellow-700 font-bold">${g.cows}</span>`;
+                cowsCell.className = 'px-4 py-2 text-sm text-center';
+            });
+        }
+
+        // --- Event Listeners and Initialization ---
+
+        function setupEventListeners() {
+            document.getElementById('create-game-btn').addEventListener('click', createGame);
+            document.getElementById('join-game-btn').addEventListener('click', () => joinGame());
+            document.getElementById('set-code-btn').addEventListener('click', setSecretCode);
+            document.getElementById('submit-guess-btn').addEventListener('click', submitGuess);
+
+            // Input validation and formatting
+            document.getElementById('secret-code-input').addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                if (e.target.value.length === 4) {
+                    codeSetupMessage.textContent = validateCode(e.target.value) || '';
+                }
+            });
+            document.getElementById('guess-input').addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            });
+            document.getElementById('join-game-id').addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            });
+        }
+
+        async function initializeAppAndAuth() {
+            if (Object.keys(firebaseConfig).length === 0) {
+                 setupMessage.textContent = "Firebase configuration is missing or invalid. Please check the script block.";
+                 console.error("Firebase config is required but missing. You need to update the 'myLocalConfig' object in the script.");
+                 return;
+            }
+
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                // Auth Check and Sign-in
+                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        setStatus("Ready. Create or join a game.", 'bg-gray-200 text-gray-800');
+                        setupEventListeners();
+                    } else {
+                         // Should not happen if signInAnonymously is successful
+                        setStatus("Authentication failed.", 'bg-red-500 text-white');
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase Initialization Error:", error);
+                // Custom error message for key restriction issue
+                if (error.code && error.code.includes('api-key-not-valid')) {
+                    setupMessage.textContent = `Initialization Error: API Key Invalid/Restricted. You must authorize your local domain (e.g., http://localhost:5500) in the Google Cloud Console API restrictions.`;
+                } else {
+                    // Display the specific Firebase error message to the user
+                    setupMessage.textContent = `Initialization Error: Firebase: ${error.message}`;
+                }
+            }
+        }
+
+        initializeAppAndAuth();
+    </script>
+</body>
+</html>
