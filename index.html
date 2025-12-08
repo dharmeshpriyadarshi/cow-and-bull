@@ -268,7 +268,7 @@
         async function createGame() {
             try {
                 const gameId = generateGameId();
-                const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
+                const gameRef = doc(db, 'games', gameId);
                 
                 await setDoc(gameRef, {
                     id: gameId,
@@ -300,11 +300,11 @@
                 return;
             }
 
-            const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', currentGameId);
+            const gameRef = doc(db, 'games', currentGameId);
             
             try {
                 // Check if the game exists and if we are player 1 or 2
-                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'games'), where('id', '==', currentGameId));
+                const q = query(collection(db, 'games'), where('id', '==', currentGameId));
                 const gameSnap = await getDocs(q);
 
                 if (gameSnap.empty) {
@@ -353,7 +353,7 @@
             }
             codeSetupMessage.textContent = '';
             
-            const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', currentGameId);
+            const gameRef = doc(db, 'games', currentGameId);
             
             try {
                 const updateData = {};
@@ -379,11 +379,11 @@
                 return;
             }
             
-            const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', currentGameId);
+            const gameRef = doc(db, 'games', currentGameId);
 
             try {
                 // Get current game state to find the opponent's secret
-                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'games'), where('id', '==', currentGameId));
+                const q = query(collection(db, 'games'), where('id', '==', currentGameId));
                 const gameSnap = await getDocs(q);
                 const gameData = gameSnap.docs[0].data();
 
