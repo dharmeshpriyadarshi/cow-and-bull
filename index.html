@@ -150,17 +150,20 @@
 
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, getDocs, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Initialize Firebase
         setLogLevel('Debug');
-        let app, db, auth;
+        let app, db;
         let userId = null;
         let isAuthReady = false;
         let currentGameId = null;
         let playerNumber = null; // 'p1' or 'p2'
+
+        function generateUserId() {
+            return 'user_' + Math.random().toString(36).substr(2, 9);
+        }
 
         // DOM Elements
         const setupView = document.getElementById('setup-view');
@@ -586,39 +589,19 @@
                 db = getFirestore(app);
                 console.log("Firestore initialized:", db);
                 
-                auth = getAuth(app);
-                console.log("Auth initialized:", auth);
+                // Generate a user ID for this session
+                userId = generateUserId();
+                isAuthReady = true;
                 
-                // Auth Check and Sign-in
-                console.log("Attempting anonymous sign-in...");
-                await signInAnonymously(auth);
-                console.log("Anonymous sign-in successful");
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        isAuthReady = true;
-                        console.log("User authenticated with ID:", userId);
-                        setStatus("Ready. Create or join a game.", 'bg-gray-200 text-gray-800');
-                        setupEventListeners();
-                    } else {
-                         // Should not happen if signInAnonymously is successful
-                        console.error("No user authenticated");
-                        setStatus("Authentication failed.", 'bg-red-500 text-white');
-                    }
-                });
+                console.log("User initialized with ID:", userId);
+                setStatus("Ready. Create or join a game.", 'bg-gray-200 text-gray-800');
+                setupEventListeners();
 
             } catch (error) {
                 console.error("Firebase Initialization Error:", error);
                 console.error("Error Code:", error.code);
                 console.error("Error Message:", error.message);
-                // Custom error message for key restriction issue
-                if (error.code && error.code.includes('api-key-not-valid')) {
-                    setupMessage.textContent = `Initialization Error: API Key Invalid/Restricted. You must authorize your domain in the Google Cloud Console API restrictions.`;
-                } else {
-                    // Display the specific Firebase error message to the user
-                    setupMessage.textContent = `Initialization Error: ${error.code || 'Unknown'} - ${error.message}`;
-                }
+                setupMessage.textContent = `Initialization Error: ${error.code || 'Unknown'} - ${error.message}`;
             }
         }
 
