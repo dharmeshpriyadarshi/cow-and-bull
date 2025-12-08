@@ -16,7 +16,12 @@
 
     <!-- Main Game Container -->
     <div id="game-container" class="w-full max-w-4xl bg-white shadow-2xl rounded-xl p-6 md:p-10 border-t-4 border-indigo-600">
-        <h1 class="4xl font-extrabold text-center mb-2 text-indigo-800">Code Breaker Duel</h1>
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="4xl font-extrabold text-indigo-800">Code Breaker Duel</h1>
+            <button onclick="window.location.reload()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 text-sm">
+                ↻ New Game
+            </button>
+        </div>
         <p class="text-center text-gray-500 mb-8">A real-time 4-digit number guessing game.</p>
 
         <!-- Dynamic Status Bar -->
@@ -465,16 +470,20 @@
                     gameplayView.classList.add('hidden');
 
                     if (mySecretIsSet && opponentSecretIsSet) {
+                        // Both codes are set, proceed to gameplay
                         setStatus("Codes are set! Game starting...", 'bg-green-100 text-green-800');
+                        // Don't return here - let it transition to gameplay below
                     } else if (mySecretIsSet) {
                         setStatus("Code locked in! Waiting for opponent to set their code.", 'bg-yellow-100 text-yellow-800');
+                        return; // Stay in code setup until opponent is ready
                     } else {
                         setStatus("Set your secret code to begin.", 'bg-indigo-100 text-indigo-800');
+                        return; // Stay in code setup until we set our code
                     }
-                    return; // Don't proceed to game view yet
                 }
 
-                if (game.status === 'in_progress' || game.status === 'setup' || (mySecretIsSet && opponentSecretIsSet)) {
+                // If both codes are set, transition to gameplay
+                if (mySecretIsSet && opponentSecretIsSet) {
                     // Transition to gameplay
                     codeSetupView.classList.add('hidden');
                     gameplayView.classList.remove('hidden');
