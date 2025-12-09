@@ -341,15 +341,67 @@
                     const room = doc.data();
                     const opponentName = window.appState.playerNumber === 'p1' ? room.p2_name : room.p1_name;
                     document.getElementById('lobby-opponent-name').textContent = opponentName || 'Waiting...';
+                    
+                    // Check for game request
+                    if (room.gameRequest && room.gameRequest.requestedBy !== window.appState.playerNumber) {
+                        showGameRequest(room.gameRequest);
+                    }
+                    
+                    // Check if game was accepted
+                    if (room.gameRequest && room.gameRequest.status === 'accepted' && !window.appState.gameStarted) {
+                        window.appState.gameStarted = true;
+                        startAcceptedGame(room.gameRequest.gameType);
+                    }
                 }
             });
         };
 
-        window.selectGame = function(gameType) {
-            window.appState.currentGame = gameType;
-            document.getElementById('lobby-screen').classList.add('hidden');
-            document.getElementById('game-container').classList.remove('hidden');
-            loadGame(gameType);
+        window.selectGame = async function(gameType) {
+            if (!window.appState.roomId) {
+                alert('You need to be in a room first!');
+                return;
+            }
+            
+            // Check if both players are in the room
+            const roomRef = doc(db, 'rooms', window.appState.roomId);
+            const roomSnap = await getDoc(roomRef);
+            
+            if (!roomSnap.exists()) {
+                alert('Room not found!');
+                return;
+            }
+            
+            const roomData = roomSnap.data();
+            if (!roomData.p1_id || !roomData.p2_id) {
+                alert('Waiting for opponent to join the room!');
+                return;
+            }
+            
+            // Send game request
+            const gameNames = {
+                'codebreaker': '🔐 Code Breaker',
+                'tictactoe': '⚭ Tic Tac Toe',
+                'wavelength': '📊 Wavelength',
+                'stonepaper': '✋ Stone Paper Scissor',
+                'fastfour': '🎯 Fast Four'
+            };
+            
+            try {
+                await updateDoc(roomRef, {
+                    gameRequest: {
+                        gameType: gameType,
+                        gameName: gameNames[gameType],
+                        requestedBy: window.appState.playerNumber,
+                        status: 'pending',
+                        timestamp: new Date().toISOString()
+                    }
+                });
+                
+                showWaitingForResponse(gameNames[gameType]);
+            } catch (error) {
+                console.error('Error sending game request:', error);
+                alert('Failed to send game request. Please try again.');
+            }
         };
 
         window.exitRoom = async function() {
@@ -359,6 +411,8 @@
                     await deleteDoc(roomRef);
                     window.appState.roomId = null;
                     window.appState.playerNumber = null;
+                    window.appState.gameStarted = false;
+                    document.querySelectorAll('.game-request-modal').forEach(el => el.remove());
                     document.getElementById('lobby-screen').classList.add('hidden');
                     document.getElementById('game-container').classList.add('hidden');
                     document.getElementById('landing-screen').classList.remove('hidden');
@@ -368,7 +422,105 @@
             }
         };
 
+        window.showGameRequest = function(request) {
+            // Remove any existing request modals
+            document.querySelectorAll('.game-request-modal').forEach(el => el.remove());
+            
+            if (request.status !== 'pending') return;
+            
+            const modal = document.createElement('div');
+            modal.className = 'game-request-modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+            modal.innerHTML = `<div class="bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-blue-500/50 rounded-2xl p-8 max-w-md text-center">
+                <h3 class="text-2xl font-bold mb-4 text-blue-400">Game Request</h3>
+                <p class="text-gray-300 mb-6">Your opponent wants to play:<br><span class="text-xl font-bold text-white">${request.gameName}</span></p>
+                <div class="flex gap-4 justify-center">
+                    <button onclick="acceptGameRequest()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition shadow-lg transform hover:scale-105">
+                        ✔ Accept
+                    </button>
+                    <button onclick="rejectGameRequest()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition shadow-lg transform hover:scale-105">
+                        ✖ Reject
+                    </button>
+                </div>
+            </div>`;
+            document.body.appendChild(modal);
+        };
+
+        window.showWaitingForResponse = function(gameName) {
+            document.querySelectorAll('.game-request-modal').forEach(el => el.remove());
+            
+            const modal = document.createElement('div');
+            modal.className = 'game-request-modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+            modal.innerHTML = `<div class="bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-yellow-500/50 rounded-2xl p-8 max-w-md text-center">
+                <h3 class="text-2xl font-bold mb-4 text-yellow-400">Waiting for Response...</h3>
+                <p class="text-gray-300 mb-6">You requested to play:<br><span class="text-xl font-bold text-white">${gameName}</span></p>
+                <div class="animate-pulse text-gray-400 mb-4">
+                    <p>Waiting for opponent's response...</p>
+                </div>
+                <button onclick="cancelGameRequest()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition">
+                    Cancel Request
+                </button>
+            </div>`;
+            document.body.appendChild(modal);
+        };
+
+        window.acceptGameRequest = async function() {
+            try {
+                const roomRef = doc(db, 'rooms', window.appState.roomId);
+                await updateDoc(roomRef, {
+                    'gameRequest.status': 'accepted'
+                });
+                document.querySelectorAll('.game-request-modal').forEach(el => el.remove());
+            } catch (error) {
+                console.error('Error accepting game request:', error);
+            }
+        };
+
+        window.rejectGameRequest = async function() {
+            try {
+                const roomRef = doc(db, 'rooms', window.appState.roomId);
+                await updateDoc(roomRef, {
+                    gameRequest: null
+                });
+                document.querySelectorAll('.game-request-modal').forEach(el => el.remove());
+            } catch (error) {
+                console.error('Error rejecting game request:', error);
+            }
+        };
+
+        window.cancelGameRequest = async function() {
+            try {
+                const roomRef = doc(db, 'rooms', window.appState.roomId);
+                await updateDoc(roomRef, {
+                    gameRequest: null
+                });
+                document.querySelectorAll('.game-request-modal').forEach(el => el.remove());
+            } catch (error) {
+                console.error('Error cancelling game request:', error);
+            }
+        };
+
+        window.startAcceptedGame = function(gameType) {
+            document.querySelectorAll('.game-request-modal').forEach(el => el.remove());
+            window.appState.currentGame = gameType;
+            document.getElementById('lobby-screen').classList.add('hidden');
+            document.getElementById('game-container').classList.remove('hidden');
+            loadGame(gameType);
+        };
+
         window.backToLobby = async function() {
+            window.appState.gameStarted = false;
+            
+            // Clear game request when returning to lobby
+            try {
+                const roomRef = doc(db, 'rooms', window.appState.roomId);
+                await updateDoc(roomRef, {
+                    gameRequest: null
+                });
+            } catch (error) {
+                console.error('Error clearing game request:', error);
+            }
+            
+            document.querySelectorAll('.game-request-modal').forEach(el => el.remove());
             document.getElementById('game-container').classList.add('hidden');
             document.getElementById('lobby-screen').classList.remove('hidden');
         };
