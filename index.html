@@ -503,10 +503,238 @@
             document.body.appendChild(modal);
         };
 
-        // ==================== OTHER GAMES (STUBS) ====================
+        // ==================== TIC TAC TOE GAME ====================
         window.loadTicTacToeGame = function() {
-            alert('Tic Tac Toe - Coming Soon!');
+            const container = document.getElementById('game-container');
+            container.innerHTML = `
+                <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl p-8 fade-in">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-green-600">⭕ Tic Tac Toe</h2>
+                        <button onclick="backToLobby()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Back</button>
+                    </div>
+                    
+                    <div id="ttt-status" class="bg-green-100 text-green-800 p-4 rounded-lg mb-6 font-semibold text-center">Loading...</div>
+
+                    <!-- Round Info -->
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-blue-50 p-3 rounded-lg text-center border-2 border-blue-300">
+                            <p class="text-sm text-gray-600">Round</p>
+                            <p class="text-2xl font-bold text-blue-600" id="ttt-round">1/3</p>
+                        </div>
+                        <div class="bg-purple-50 p-3 rounded-lg text-center border-2 border-purple-300">
+                            <p class="text-sm text-gray-600">Your Wins</p>
+                            <p class="text-2xl font-bold text-purple-600" id="ttt-your-wins">0</p>
+                        </div>
+                        <div class="bg-orange-50 p-3 rounded-lg text-center border-2 border-orange-300">
+                            <p class="text-sm text-gray-600">Opponent Wins</p>
+                            <p class="text-2xl font-bold text-orange-600" id="ttt-opp-wins">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Board -->
+                    <div class="mb-6">
+                        <div class="grid grid-cols-3 gap-2 bg-gray-800 p-2 rounded-lg" id="ttt-board">
+                            ${Array(9).fill(0).map((_, i) => 
+                                `<button onclick="tttMakeMove(${i})" id="ttt-cell-${i}" class="w-20 h-20 bg-white text-3xl font-bold rounded hover:bg-gray-100 transition text-center"></button>`
+                            ).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Current Player -->
+                    <div id="ttt-current" class="text-center text-lg font-semibold text-gray-700 mb-4">Waiting for game start...</div>
+                </div>
+            `;
+
+            window.tttState = {
+                roomId: window.appState.roomId,
+                playerId: window.appState.userId,
+                playerNum: window.appState.playerNumber,
+                playerSymbol: window.appState.playerNumber === 'p1' ? 'X' : 'O',
+                currentRound: 1,
+                maxRounds: 3,
+                yourWins: 0,
+                oppWins: 0,
+                board: ['', '', '', '', '', '', '', '', ''],
+                currentPlayer: 'p1',
+                gameEnded: false,
+                roundEnded: false,
+                gameOverall: false
+            };
+
+            tttInitialize();
         };
+
+        window.tttInitialize = async function() {
+            const gameRef = doc(db, 'tttgames', window.appState.roomId);
+            const existing = await getDocs(query(collection(db, 'tttgames'), where('roomId', '==', window.appState.roomId)));
+            
+            if (existing.empty) {
+                await setDoc(gameRef, {
+                    roomId: window.appState.roomId,
+                    board: ['', '', '', '', '', '', '', '', ''],
+                    currentPlayer: 'p1',
+                    round: 1,
+                    p1_wins: 0,
+                    p2_wins: 0,
+                    status: 'active',
+                    createdAt: Date.now()
+                });
+            }
+            
+            tttListen();
+        };
+
+        window.tttListen = function() {
+            const gameRef = doc(db, 'tttgames', window.appState.roomId);
+            onSnapshot(gameRef, (doc) => {
+                if (!doc.exists()) return;
+                const game = doc.data();
+                
+                window.tttState.board = game.board;
+                window.tttState.currentRound = game.round || 1;
+                window.tttState.yourWins = window.tttState.playerNum === 'p1' ? (game.p1_wins || 0) : (game.p2_wins || 0);
+                window.tttState.oppWins = window.tttState.playerNum === 'p1' ? (game.p2_wins || 0) : (game.p1_wins || 0);
+                window.tttState.currentPlayer = game.currentPlayer;
+                
+                document.getElementById('ttt-round').textContent = `${window.tttState.currentRound}/3`;
+                document.getElementById('ttt-your-wins').textContent = window.tttState.yourWins;
+                document.getElementById('ttt-opp-wins').textContent = window.tttState.oppWins;
+                
+                tttRenderBoard();
+                
+                const winner = tttCheckWinner(window.tttState.board);
+                if (winner) {
+                    window.tttState.roundEnded = true;
+                    if (winner === window.tttState.playerSymbol) {
+                        window.tttState.yourWins++;
+                        document.getElementById('ttt-status').textContent = '✅ You won this round!';
+                    } else {
+                        window.tttState.oppWins++;
+                        document.getElementById('ttt-status').textContent = '❌ Opponent won this round';
+                    }
+                    
+                    if (window.tttState.currentRound < 3) {
+                        setTimeout(() => tttStartNewRound(), 2000);
+                    } else {
+                        tttShowFinalResult();
+                    }
+                } else if (window.tttState.board.every(cell => cell !== '')) {
+                    window.tttState.roundEnded = true;
+                    document.getElementById('ttt-status').textContent = '🤝 This round is a tie!';
+                    
+                    if (window.tttState.currentRound < 3) {
+                        setTimeout(() => tttStartNewRound(), 2000);
+                    } else {
+                        tttShowFinalResult();
+                    }
+                } else {
+                    const isMyTurn = game.currentPlayer === window.tttState.playerNum;
+                    document.getElementById('ttt-status').classList.toggle('!bg-green-200', isMyTurn);
+                    document.getElementById('ttt-status').classList.toggle('!bg-gray-200', !isMyTurn);
+                    document.getElementById('ttt-status').textContent = isMyTurn ? '🎯 Your Turn' : '⏳ Opponent\'s Turn';
+                    
+                    Array.from(document.querySelectorAll('[id^="ttt-cell-"]')).forEach(cell => {
+                        cell.disabled = !isMyTurn;
+                    });
+                }
+            });
+        };
+
+        window.tttMakeMove = async function(index) {
+            if (window.tttState.board[index] !== '' || window.tttState.roundEnded) return;
+            if (window.tttState.currentPlayer !== window.tttState.playerNum) return;
+            
+            const gameRef = doc(db, 'tttgames', window.appState.roomId);
+            const newBoard = [...window.tttState.board];
+            newBoard[index] = window.tttState.playerSymbol;
+            
+            const nextPlayer = window.tttState.playerNum === 'p1' ? 'p2' : 'p1';
+            
+            await updateDoc(gameRef, {
+                board: newBoard,
+                currentPlayer: nextPlayer
+            });
+        };
+
+        window.tttCheckWinner = function(board) {
+            const lines = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6]
+            ];
+            
+            for (let line of lines) {
+                if (board[line[0]] && board[line[0]] === board[line[1]] && board[line[1]] === board[line[2]]) {
+                    return board[line[0]];
+                }
+            }
+            return null;
+        };
+
+        window.tttRenderBoard = function() {
+            window.tttState.board.forEach((cell, idx) => {
+                const cellEl = document.getElementById(`ttt-cell-${idx}`);
+                cellEl.textContent = cell;
+                cellEl.className = `w-20 h-20 rounded text-3xl font-bold transition text-center ${
+                    cell === 'X' ? 'bg-blue-100 text-blue-600' :
+                    cell === 'O' ? 'bg-red-100 text-red-600' :
+                    'bg-white hover:bg-gray-100'
+                }`;
+            });
+        };
+
+        window.tttStartNewRound = async function() {
+            window.tttState.currentRound++;
+            window.tttState.roundEnded = false;
+            window.tttState.board = ['', '', '', '', '', '', '', '', ''];
+            window.tttState.currentPlayer = 'p1';
+            
+            const gameRef = doc(db, 'tttgames', window.appState.roomId);
+            const p1Wins = window.tttState.playerNum === 'p1' ? window.tttState.yourWins : window.tttState.oppWins;
+            const p2Wins = window.tttState.playerNum === 'p1' ? window.tttState.oppWins : window.tttState.yourWins;
+            
+            await updateDoc(gameRef, {
+                board: window.tttState.board,
+                currentPlayer: 'p1',
+                round: window.tttState.currentRound,
+                p1_wins: p1Wins,
+                p2_wins: p2Wins
+            });
+        };
+
+        window.tttShowFinalResult = function() {
+            window.tttState.gameOverall = true;
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+            
+            let title = '', color = '', message = '';
+            if (window.tttState.yourWins > window.tttState.oppWins) {
+                title = '🎉 YOU WIN!';
+                color = 'text-green-600';
+                message = `You won ${window.tttState.yourWins} out of 3 rounds!`;
+            } else if (window.tttState.oppWins > window.tttState.yourWins) {
+                title = '😢 YOU LOSE!';
+                color = 'text-red-600';
+                message = `Opponent won ${window.tttState.oppWins} out of 3 rounds!`;
+            } else {
+                title = '🤝 DRAW!';
+                color = 'text-yellow-600';
+                message = `Both won ${window.tttState.yourWins} rounds each!`;
+            }
+            
+            modal.innerHTML = `<div class="bg-white rounded-2xl p-8 max-w-md text-center">
+                <h3 class="text-3xl font-bold mb-4 ${color}">${title}</h3>
+                <p class="text-gray-700 mb-6">${message}</p>
+                <button onclick="backToLobby()" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg">Back to Lobby</button>
+            </div>`;
+            document.body.appendChild(modal);
+        };
+
         window.loadWavelengthGame = function() {
             alert('Wavelength - Coming Soon!');
         };
