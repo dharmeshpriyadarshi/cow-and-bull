@@ -12,19 +12,19 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
-<body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-screen">
+<body class="bg-gray-900 min-h-screen">
     
     <div id="app" class="min-h-screen p-4 md:p-8">
         
         <!-- LANDING SCREEN -->
         <div id="landing-screen" class="flex items-center justify-center min-h-screen">
-            <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 fade-in">
-                <h1 class="text-5xl font-black text-center text-purple-600 mb-2">Ka re?</h1>
-                <p class="text-center text-gray-600 mb-8 text-lg">Multi-Game Battle Platform</p>
+            <div class="w-full max-w-md bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-8 fade-in border-2 border-gray-700">
+                <h1 class="text-5xl font-black text-center bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-2">Ka re?</h1>
+                <p class="text-center text-gray-300 mb-8 text-lg">Multi-Game Battle Platform</p>
                 
                 <div class="mb-6">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Your Name</label>
-                    <input type="text" id="username-input" maxlength="20" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition" placeholder="Enter your name...">
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">Your Name</label>
+                    <input type="text" id="username-input" maxlength="20" class="w-full p-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition" placeholder="Enter your name...">
                 </div>
                 
                 <div class="space-y-3">
@@ -40,24 +40,24 @@
 
         <!-- ROOM SELECTION SCREEN -->
         <div id="room-screen" class="hidden min-h-screen flex items-center justify-center">
-            <div class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8 fade-in">
-                <button onclick="goBack()" class="mb-6 text-purple-600 hover:text-purple-800 font-semibold">← Back</button>
-                <h2 class="text-3xl font-bold text-gray-800 mb-6">Room Selection</h2>
+            <div class="w-full max-w-2xl bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-8 fade-in border-2 border-gray-700">
+                <button onclick="goBack()" class="mb-6 text-blue-400 hover:text-blue-300 font-semibold">← Back</button>
+                <h2 class="text-3xl font-bold text-white mb-6">Room Selection</h2>
                 
                 <div class="mb-6">
-                    <p class="text-gray-700 mb-3 font-semibold">Hello, <span id="room-username" class="text-purple-600"></span>!</p>
+                    <p class="text-gray-300 mb-3 font-semibold">Hello, <span id="room-username" class="text-blue-400"></span>!</p>
                 </div>
 
-                <div class="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg mb-6 border-2 border-green-300">
-                    <h3 class="text-xl font-bold text-gray-800 mb-3">Create New Room</h3>
+                <div class="bg-gradient-to-r from-green-900/30 to-blue-900/30 p-6 rounded-lg mb-6 border-2 border-green-600/50">
+                    <h3 class="text-xl font-bold text-white mb-3">Create New Room</h3>
                     <button onclick="createRoom()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg transition shadow-lg">
                         ✨ Create Room
                     </button>
                 </div>
 
-                <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border-2 border-blue-300">
-                    <h3 class="text-xl font-bold text-gray-800 mb-3">Join Existing Room</h3>
-                    <input type="text" id="room-code-input" maxlength="6" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition mb-3 text-center tracking-widest text-lg" placeholder="e.g. ABC123">
+                <div class="bg-gradient-to-r from-blue-900/30 to-purple-900/30 p-6 rounded-lg border-2 border-blue-600/50">
+                    <h3 class="text-xl font-bold text-white mb-3">Join Existing Room</h3>
+                    <input type="text" id="room-code-input" maxlength="6" class="w-full p-3 bg-gray-700 border-2 border-gray-600 text-white rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition mb-3 text-center tracking-widest text-lg" placeholder="e.g. ABC123">
                     <button onclick="joinRoom()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition shadow-lg">
                         🔗 Join Room
                     </button>
@@ -67,13 +67,13 @@
         </div>
 
         <!-- LOBBY SCREEN -->
-        <div id="lobby-screen" class="hidden min-h-screen">
+        <div id="lobby-screen" class="hidden min-h-screen p-4">
             <div class="max-w-4xl mx-auto">
-                <div class="bg-white rounded-2xl shadow-2xl p-6 mb-6 fade-in">
+                <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-6 mb-6 fade-in border-2 border-gray-700">
                     <div class="flex justify-between items-center mb-4">
                         <div>
-                            <h2 class="text-3xl font-bold text-gray-800">Game Lobby</h2>
-                            <p class="text-gray-600">Room: <span id="lobby-room-id" class="font-mono font-bold text-purple-600 text-lg"></span></p>
+                            <h2 class="text-3xl font-bold text-white">Game Lobby</h2>
+                            <p class="text-gray-300">Room: <span id="lobby-room-id" class="font-mono font-bold text-blue-400 text-lg"></span></p>
                         </div>
                         <button onclick="exitRoom()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition">
                             Exit Room
@@ -81,19 +81,19 @@
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-blue-50 p-4 rounded-lg border-2 border-blue-300">
-                            <p class="text-sm text-gray-600">Your Name</p>
-                            <p class="text-xl font-bold text-blue-600" id="lobby-your-name"></p>
+                        <div class="bg-blue-900/40 p-4 rounded-lg border-2 border-blue-500/50">
+                            <p class="text-sm text-gray-400">Your Name</p>
+                            <p class="text-xl font-bold text-blue-400" id="lobby-your-name"></p>
                         </div>
-                        <div class="bg-orange-50 p-4 rounded-lg border-2 border-orange-300">
-                            <p class="text-sm text-gray-600">Opponent</p>
-                            <p class="text-xl font-bold text-orange-600" id="lobby-opponent-name">Waiting...</p>
+                        <div class="bg-orange-900/40 p-4 rounded-lg border-2 border-orange-500/50">
+                            <p class="text-sm text-gray-400">Opponent</p>
+                            <p class="text-xl font-bold text-orange-400" id="lobby-opponent-name">Waiting...</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl shadow-2xl p-6 fade-in">
-                    <h3 class="text-2xl font-bold text-gray-800 mb-4">Select a Game</h3>
+                <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-6 fade-in border-2 border-gray-700">
+                    <h3 class="text-2xl font-bold text-white mb-4">Select a Game</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <button onclick="selectGame('codebreaker')" class="p-6 bg-gradient-to-br from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-lg font-bold shadow-lg transition transform hover:scale-105">
                             🔐 Code Breaker
@@ -117,21 +117,21 @@
 
         <!-- WAR SELECTION SCREEN -->
         <div id="war-screen" class="hidden min-h-screen flex items-center justify-center">
-            <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 fade-in">
-                <button onclick="warGoBack()" class="mb-4 text-purple-600 hover:text-purple-800 font-semibold">← Back</button>
-                <h2 class="text-4xl font-black text-center text-red-600 mb-2">⚔️ DECLARE A WAR</h2>
-                <p class="text-center text-gray-600 mb-8">Challenge another player to battle through all 5 games!</p>
+            <div class="w-full max-w-md bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-8 fade-in border-2 border-red-600/50">
+                <button onclick="warGoBack()" class="mb-4 text-blue-400 hover:text-blue-300 font-semibold">← Back</button>
+                <h2 class="text-4xl font-black text-center bg-gradient-to-r from-red-400 to-orange-500 bg-clip-text text-transparent mb-2">⚔️ DECLARE A WAR</h2>
+                <p class="text-center text-gray-300 mb-8">Challenge another player to battle through all 5 games!</p>
                 
-                <div class="bg-red-50 p-6 rounded-lg mb-6 border-2 border-red-300">
-                    <h3 class="text-lg font-bold text-gray-800 mb-3">Create New War</h3>
+                <div class="bg-red-900/30 p-6 rounded-lg mb-6 border-2 border-red-600/50">
+                    <h3 class="text-lg font-bold text-white mb-3">Create New War</h3>
                     <button onclick="confirmWar()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg transition shadow-lg">
                         ⚔️ Create War Room
                     </button>
                 </div>
 
-                <div class="bg-blue-50 p-6 rounded-lg border-2 border-blue-300">
-                    <h3 class="text-lg font-bold text-gray-800 mb-3">Join Existing War</h3>
-                    <input type="text" id="war-code-join" maxlength="6" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition mb-3 text-center tracking-widest text-lg" placeholder="e.g. ABC123">
+                <div class="bg-blue-900/30 p-6 rounded-lg border-2 border-blue-600/50">
+                    <h3 class="text-lg font-bold text-white mb-3">Join Existing War</h3>
+                    <input type="text" id="war-code-join" maxlength="6" class="w-full p-3 bg-gray-700 border-2 border-gray-600 text-white rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition mb-3 text-center tracking-widest text-lg" placeholder="e.g. ABC123">
                     <button onclick="warJoinConfirm()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition shadow-lg">
                         🔗 Join War
                     </button>
@@ -142,27 +142,27 @@
 
         <!-- WAR LOBBY SCREEN -->
         <div id="war-lobby-screen" class="hidden min-h-screen flex items-center justify-center">
-            <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 fade-in">
-                <h2 class="text-3xl font-bold text-center text-red-600 mb-6">⚔️ WAR LOBBY</h2>
+            <div class="w-full max-w-md bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-8 fade-in border-2 border-red-600/50">
+                <h2 class="text-3xl font-bold text-center bg-gradient-to-r from-red-400 to-orange-500 bg-clip-text text-transparent mb-6">⚔️ WAR LOBBY</h2>
                 
-                <div class="bg-gradient-to-r from-purple-100 to-red-100 p-6 rounded-lg mb-6 border-2 border-red-300">
-                    <p class="text-sm text-gray-600 mb-2">War Code</p>
-                    <p class="text-2xl font-black text-red-600 text-center tracking-widest mb-4" id="war-code-display"></p>
-                    <p class="text-center text-gray-700 font-semibold">Share this code with your opponent!</p>
+                <div class="bg-gradient-to-r from-purple-900/40 to-red-900/40 p-6 rounded-lg mb-6 border-2 border-red-500/50">
+                    <p class="text-sm text-gray-400 mb-2">War Code</p>
+                    <p class="text-2xl font-black text-red-400 text-center tracking-widest mb-4" id="war-code-display"></p>
+                    <p class="text-center text-gray-300 font-semibold">Share this code with your opponent!</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="bg-blue-50 p-4 rounded-lg border-2 border-blue-300">
-                        <p class="text-sm text-gray-600">You</p>
-                        <p class="text-lg font-bold text-blue-600" id="war-your-name"></p>
+                    <div class="bg-blue-900/40 p-4 rounded-lg border-2 border-blue-500/50">
+                        <p class="text-sm text-gray-400">You</p>
+                        <p class="text-lg font-bold text-blue-400" id="war-your-name"></p>
                     </div>
-                    <div class="bg-orange-50 p-4 rounded-lg border-2 border-orange-300">
-                        <p class="text-sm text-gray-600">Opponent</p>
-                        <p class="text-lg font-bold text-orange-600" id="war-opponent-name">Waiting...</p>
+                    <div class="bg-orange-900/40 p-4 rounded-lg border-2 border-orange-500/50">
+                        <p class="text-sm text-gray-400">Opponent</p>
+                        <p class="text-lg font-bold text-orange-400" id="war-opponent-name">Waiting...</p>
                     </div>
                 </div>
 
-                <div id="war-waiting-message" class="text-center text-gray-600 mb-4">
+                <div id="war-waiting-message" class="text-center text-gray-400 mb-4">
                     <p class="text-sm">Waiting for opponent to join...</p>
                 </div>
 
@@ -173,32 +173,32 @@
         </div>
 
         <!-- WAR GAME SCREEN -->
-        <div id="war-game-screen" class="hidden min-h-screen bg-gradient-to-br from-red-900 via-purple-900 to-indigo-900 p-4">
+        <div id="war-game-screen" class="hidden min-h-screen bg-gray-900 p-4">
             <div class="max-w-4xl mx-auto">
-                <div class="bg-white rounded-2xl shadow-2xl p-4 mb-4">
+                <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-4 mb-4 border-2 border-gray-700">
                     <div class="mb-4">
                         <div class="flex justify-between items-center mb-2">
-                            <h2 id="war-game-title" class="text-2xl font-bold text-gray-800"></h2>
-                            <span id="war-game-number" class="text-sm font-semibold text-gray-600"></span>
+                            <h2 id="war-game-title" class="text-2xl font-bold text-white"></h2>
+                            <span id="war-game-number" class="text-sm font-semibold text-gray-400"></span>
                         </div>
                         <div id="war-game-progress" class="flex gap-1"></div>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4 text-center">
-                        <div class="bg-blue-100 p-2 rounded-lg">
-                            <p class="text-xs text-gray-600">Player 1</p>
-                            <p class="text-lg font-bold text-blue-600" id="war-p1-name"></p>
-                            <p class="text-xl font-black text-blue-700" id="war-p1-score">0</p>
+                        <div class="bg-blue-900/40 p-2 rounded-lg border border-blue-500/50">
+                            <p class="text-xs text-gray-400">Player 1</p>
+                            <p class="text-lg font-bold text-blue-400" id="war-p1-name"></p>
+                            <p class="text-xl font-black text-blue-300" id="war-p1-score">0</p>
                         </div>
-                        <div class="bg-orange-100 p-2 rounded-lg">
-                            <p class="text-xs text-gray-600">Player 2</p>
-                            <p class="text-lg font-bold text-orange-600" id="war-p2-name"></p>
-                            <p class="text-xl font-black text-orange-700" id="war-p2-score">0</p>
+                        <div class="bg-orange-900/40 p-2 rounded-lg border border-orange-500/50">
+                            <p class="text-xs text-gray-400">Player 2</p>
+                            <p class="text-lg font-bold text-orange-400" id="war-p2-name"></p>
+                            <p class="text-xl font-black text-orange-300" id="war-p2-score">0</p>
                         </div>
                     </div>
                 </div>
                 
-                <div id="game-container-war" class="bg-white rounded-2xl shadow-2xl p-6"></div>
+                <div id="game-container-war"></div>
             </div>
         </div>
 
