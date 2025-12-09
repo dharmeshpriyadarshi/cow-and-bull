@@ -94,6 +94,18 @@
 
                 <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-6 fade-in border-2 border-gray-700">
                     <h3 class="text-2xl font-bold text-white mb-4">Select a Game</h3>
+                    
+                    <div class="mb-6">
+                        <button onclick="startWarFromLobby()" class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-4 rounded-lg transition shadow-lg transform hover:scale-105">
+                            ⚔️ DECLARE A WAR
+                        </button>
+                        <p class="text-center text-gray-400 text-sm mt-2">Challenge your opponent to all 5 games!</p>
+                    </div>
+                    
+                    <div class="border-t border-gray-700 pt-6 mb-4">
+                        <p class="text-gray-400 text-center text-sm mb-3">Or play a single game:</p>
+                    </div>
+                    
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <button onclick="selectGame('codebreaker')" class="p-6 bg-gradient-to-br from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-lg font-bold shadow-lg transition transform hover:scale-105">
                             🔐 Code Breaker
@@ -143,6 +155,7 @@
         <!-- WAR LOBBY SCREEN -->
         <div id="war-lobby-screen" class="hidden min-h-screen flex items-center justify-center">
             <div class="w-full max-w-md bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-8 fade-in border-2 border-red-600/50">
+                <button onclick="exitWarLobby()" class="mb-4 text-blue-400 hover:text-blue-300 font-semibold">← Back</button>
                 <h2 class="text-3xl font-bold text-center bg-gradient-to-r from-red-400 to-orange-500 bg-clip-text text-transparent mb-6">⚔️ WAR LOBBY</h2>
                 
                 <div class="bg-gradient-to-r from-purple-900/40 to-red-900/40 p-6 rounded-lg mb-6 border-2 border-red-500/50">
@@ -176,6 +189,7 @@
         <div id="war-game-screen" class="hidden min-h-screen bg-gray-900 p-4">
             <div class="max-w-4xl mx-auto">
                 <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-4 mb-4 border-2 border-gray-700">
+                    <button onclick="exitWarGame()" class="mb-3 text-blue-400 hover:text-blue-300 font-semibold text-sm">← Exit War</button>
                     <div class="mb-4">
                         <div class="flex justify-between items-center mb-2">
                             <h2 id="war-game-title" class="text-2xl font-bold text-white"></h2>
@@ -1921,7 +1935,10 @@
             
             document.getElementById('war-lobby-screen').classList.add('hidden');
             document.getElementById('war-game-screen').classList.remove('hidden');
-            startNextWarGame();
+            
+            // Show start prompt instead of directly starting
+            showWarStartPrompt();
+            listenToWarFromLobby();
         };
 
         window.startNextWarGame = async function() {
@@ -2083,6 +2100,139 @@
             document.getElementById('war-lobby-screen').classList.add('hidden');
             document.getElementById('game-container').classList.add('hidden');
             document.getElementById('landing-screen').classList.remove('hidden');
+        };
+
+        window.exitWarLobby = async function() {
+            if (confirm('Are you sure you want to exit the war lobby?')) {
+                try {
+                    if (window.appState.warCode) {
+                        const warRef = doc(db, 'wars', window.appState.warCode);
+                        await deleteDoc(warRef);
+                    }
+                    window.appState.warCode = null;
+                    window.appState.warData = null;
+                    document.getElementById('war-lobby-screen').classList.add('hidden');
+                    document.getElementById('landing-screen').classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error exiting war lobby:', error);
+                }
+            }
+        };
+
+        window.exitWarGame = function() {
+            if (confirm('Are you sure you want to exit the war? Your progress will be lost.')) {
+                exitWarAndReturn();
+            }
+        };
+
+        window.startWarFromLobby = async function() {
+            if (!window.appState.roomId) {
+                alert('You need to be in a room first!');
+                return;
+            }
+
+            // Get room data to check if both players are present
+            const roomRef = doc(db, 'rooms', window.appState.roomId);
+            const roomSnap = await getDoc(roomRef);
+            
+            if (!roomSnap.exists()) {
+                alert('Room not found!');
+                return;
+            }
+
+            const roomData = roomSnap.data();
+            if (!roomData.p1_id || !roomData.p2_id) {
+                alert('Both players must be in the room to start a war!');
+                return;
+            }
+
+            if (!confirm('Start a WAR with your opponent? You will battle through all 5 games!')) {
+                return;
+            }
+
+            // Create war using existing room data
+            const warCode = window.appState.roomId; // Use same room ID for war
+            window.appState.warCode = warCode;
+            window.appState.warRoomId = warCode;
+
+            try {
+                const warRef = doc(db, 'wars', warCode);
+                await setDoc(warRef, {
+                    id: warCode,
+                    p1_id: roomData.p1_id,
+                    p1_name: roomData.p1_name,
+                    p2_id: roomData.p2_id,
+                    p2_name: roomData.p2_name,
+                    status: 'ready',
+                    gameSequence: ['codebreaker', 'tictactoe', 'stonepaper', 'fastfour', 'wavelength'],
+                    currentGameIndex: 0,
+                    p1_points: 0,
+                    p2_points: 0,
+                    gameResults: {},
+                    createdAt: new Date().toISOString()
+                });
+
+                // Hide lobby and show war game screen
+                document.getElementById('lobby-screen').classList.add('hidden');
+                document.getElementById('war-game-screen').classList.remove('hidden');
+                
+                // Listen for war updates
+                listenToWarFromLobby();
+                
+                // Show start button
+                showWarStartPrompt();
+            } catch (error) {
+                console.error('Error creating war from lobby:', error);
+                alert('Failed to start war. Please try again.');
+            }
+        };
+
+        window.listenToWarFromLobby = function() {
+            const warRef = doc(db, 'wars', window.appState.warCode);
+            onSnapshot(warRef, (warSnap) => {
+                if (!warSnap.exists()) return;
+                
+                const warData = warSnap.data();
+                window.appState.warData = warData;
+                
+                // Update display
+                document.getElementById('war-p1-name').textContent = warData.p1_name;
+                document.getElementById('war-p2-name').textContent = warData.p2_name;
+                document.getElementById('war-p1-score').textContent = warData.p1_points.toFixed(1);
+                document.getElementById('war-p2-score').textContent = warData.p2_points.toFixed(1);
+                
+                // Check if war should start
+                if (warData.status === 'in-progress' && warData.currentGameIndex === 0) {
+                    document.querySelectorAll('.war-start-modal').forEach(el => el.remove());
+                    startNextWarGame();
+                }
+            });
+        };
+
+        window.showWarStartPrompt = function() {
+            const modal = document.createElement('div');
+            modal.className = 'war-start-modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+            modal.innerHTML = `<div class="bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-red-500/50 rounded-2xl p-8 max-w-md text-center">
+                <h3 class="text-3xl font-bold mb-4 bg-gradient-to-r from-red-400 to-orange-500 bg-clip-text text-transparent">⚔️ WAR IS READY!</h3>
+                <p class="text-gray-300 mb-6">Both warriors are ready. Click below to begin the 5-game battle!</p>
+                <button onclick="startWarBattle()" class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-3 px-8 rounded-lg transition shadow-lg transform hover:scale-105">
+                    ⚔️ START WAR
+                </button>
+            </div>`;
+            document.body.appendChild(modal);
+        };
+
+        window.startWarBattle = async function() {
+            try {
+                const warRef = doc(db, 'wars', window.appState.warCode);
+                await updateDoc(warRef, {
+                    status: 'in-progress'
+                });
+                document.querySelectorAll('.war-start-modal').forEach(el => el.remove());
+                startNextWarGame();
+            } catch (error) {
+                console.error('Error starting war battle:', error);
+            }
         };
 
         console.log('Ka re? Platform Ready');
