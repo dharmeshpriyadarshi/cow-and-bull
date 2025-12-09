@@ -983,9 +983,312 @@
             document.body.appendChild(modal);
         };
 
+        // ==================== FAST FOUR GAME ====================
         window.loadFastFourGame = function() {
-            alert('Fast Four - Coming Soon!');
+            const container = document.getElementById('game-container');
+            container.innerHTML = `
+                <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-8 fade-in">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-pink-600">🎯 Fast Four</h2>
+                        <button onclick="backToLobby()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Back</button>
+                    </div>
+                    
+                    <div id="ff-status" class="bg-pink-100 text-pink-800 p-4 rounded-lg mb-6 font-semibold text-center">Loading...</div>
+
+                    <!-- Phase 1: Selection -->
+                    <div id="ff-selection-phase" class="mb-8">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Phase 1: Select Your 4 Gold Blocks</h3>
+                        <p class="text-gray-600 mb-4">Click 4 different blocks to set as your treasures. Opponent will try to guess them!</p>
+                        
+                        <div class="grid grid-cols-4 gap-3 mb-4" id="ff-select-board">
+                            ${Array(16).fill(0).map((_, i) => 
+                                `<button onclick="ffSelectBlock(${i})" id="ff-sel-${i}" class="aspect-square bg-gray-200 border-2 border-gray-400 rounded-lg font-bold text-2xl hover:bg-gray-300 transition"></button>`
+                            ).join('')}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-600">Selected: <span id="ff-selected-count">0</span>/4</p>
+                        </div>
+                        
+                        <button onclick="ffLockInGolds()" id="ff-lock-btn" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg transition disabled:opacity-50" disabled>
+                            Lock In Gold Positions
+                        </button>
+                    </div>
+
+                    <!-- Phase 2: Waiting & Guessing -->
+                    <div id="ff-guessing-phase" class="hidden mb-8">
+                        <div class="grid grid-cols-2 gap-8 mb-6">
+                            <!-- Your Board (Opponent Guessing) -->
+                            <div>
+                                <h4 class="font-bold text-lg mb-3 text-gray-800">Opponent's Guesses</h4>
+                                <div class="grid grid-cols-4 gap-2" id="ff-your-board">
+                                    ${Array(16).fill(0).map((_, i) => 
+                                        `<div id="ff-your-${i}" class="aspect-square bg-gray-100 border-2 border-gray-300 rounded-lg flex items-center justify-center font-bold text-xl"></div>`
+                                    ).join('')}
+                                </div>
+                                <p class="text-sm text-gray-600 mt-2">Opponent guessed: <span id="ff-opp-guessed">0</span>/4</p>
+                            </div>
+
+                            <!-- Opponent's Board (You Guessing) -->
+                            <div>
+                                <h4 class="font-bold text-lg mb-3 text-gray-800">Your Guesses</h4>
+                                <div class="grid grid-cols-4 gap-2" id="ff-guess-board">
+                                    ${Array(16).fill(0).map((_, i) => 
+                                        `<button onclick="ffGuessBlock(${i})" id="ff-guess-${i}" class="aspect-square bg-blue-200 border-2 border-blue-400 rounded-lg font-bold text-xl hover:bg-blue-300 transition"></button>`
+                                    ).join('')}
+                                </div>
+                                <p class="text-sm text-gray-600 mt-2">You guessed: <span id="ff-you-guessed">0</span>/4</p>
+                            </div>
+                        </div>
+
+                        <div id="ff-turn-info" class="text-center font-bold text-lg text-gray-800 mb-4"></div>
+                    </div>
+
+                    <!-- Phase 3: Locked In (Waiting) -->
+                    <div id="ff-waiting-phase" class="hidden text-center">
+                        <p class="text-lg font-bold text-gray-700 mb-4">⏳ Waiting for opponent to lock in their gold positions...</p>
+                    </div>
+                </div>
+            `;
+
+            window.ffState = {
+                roomId: window.appState.roomId,
+                playerId: window.appState.userId,
+                playerNum: window.appState.playerNumber,
+                selectedGolds: [],
+                myGolds: [],
+                oppGolds: [],
+                myGuesses: [],
+                oppGuesses: [],
+                lockedIn: false,
+                oppLockedIn: false,
+                gameEnded: false,
+                winner: null,
+                phase: 'selection' // selection, guessing, ended
+            };
+
+            ffInitialize();
         };
+
+        window.ffInitialize = async function() {
+            const gameRef = doc(db, 'ffgames', window.appState.roomId);
+            const existing = await getDocs(query(collection(db, 'ffgames'), where('roomId', '==', window.appState.roomId)));
+            
+            if (existing.empty) {
+                await setDoc(gameRef, {
+                    roomId: window.appState.roomId,
+                    p1_golds: null,
+                    p2_golds: null,
+                    p1_guesses: [],
+                    p2_guesses: [],
+                    turn: 'p1',
+                    status: 'selection',
+                    createdAt: Date.now()
+                });
+            }
+            
+            ffListen();
+        };
+
+        window.ffListen = function() {
+            const gameRef = doc(db, 'ffgames', window.appState.roomId);
+            onSnapshot(gameRef, (doc) => {
+                if (!doc.exists()) return;
+                const game = doc.data();
+                
+                const opp = window.ffState.playerNum === 'p1' ? 'p2' : 'p1';
+                window.ffState.myGolds = game[`${window.ffState.playerNum}_golds`] || [];
+                window.ffState.oppGolds = game[`${opp}_golds`] || [];
+                window.ffState.myGuesses = game[`${window.ffState.playerNum}_guesses`] || [];
+                window.ffState.oppGuesses = game[`${opp}_guesses`] || [];
+                window.ffState.phase = game.status;
+                
+                if (game.status === 'selection') {
+                    document.getElementById('ff-selection-phase').classList.remove('hidden');
+                    document.getElementById('ff-guessing-phase').classList.add('hidden');
+                    document.getElementById('ff-waiting-phase').classList.add('hidden');
+                    
+                    if (!window.ffState.myGolds.length) {
+                        document.getElementById('ff-status').textContent = 'Select your 4 gold blocks';
+                    } else {
+                        document.getElementById('ff-status').textContent = 'Waiting for opponent...';
+                        document.getElementById('ff-selection-phase').classList.add('hidden');
+                        document.getElementById('ff-waiting-phase').classList.remove('hidden');
+                    }
+                } else if (game.status === 'guessing') {
+                    document.getElementById('ff-selection-phase').classList.add('hidden');
+                    document.getElementById('ff-waiting-phase').classList.add('hidden');
+                    document.getElementById('ff-guessing-phase').classList.remove('hidden');
+                    
+                    const isMyTurn = game.turn === window.ffState.playerNum;
+                    document.getElementById('ff-turn-info').textContent = isMyTurn ? '🎯 Your Turn to Guess' : '⏳ Opponent is Guessing';
+                    
+                    // Disable/enable guessing buttons
+                    Array.from(document.querySelectorAll('[id^="ff-guess-"]')).forEach((btn, idx) => {
+                        btn.disabled = !isMyTurn || window.ffState.myGuesses.some(g => g.index === idx);
+                    });
+                    
+                    ffRenderBoards();
+                    ffCheckGameEnd();
+                }
+                
+                if (game.status === 'ended') {
+                    ffShowGameEnd();
+                }
+            });
+        };
+
+        window.ffSelectBlock = function(index) {
+            if (window.ffState.selectedGolds.includes(index)) {
+                window.ffState.selectedGolds = window.ffState.selectedGolds.filter(i => i !== index);
+            } else if (window.ffState.selectedGolds.length < 4) {
+                window.ffState.selectedGolds.push(index);
+            } else {
+                return;
+            }
+            
+            // Update UI
+            document.getElementById('ff-selected-count').textContent = window.ffState.selectedGolds.length;
+            Array.from(document.querySelectorAll('[id^="ff-sel-"]')).forEach((btn, idx) => {
+                if (window.ffState.selectedGolds.includes(idx)) {
+                    btn.classList.add('bg-pink-400', 'border-pink-600');
+                    btn.textContent = '✨';
+                } else {
+                    btn.classList.remove('bg-pink-400', 'border-pink-600');
+                    btn.textContent = '';
+                }
+            });
+            
+            document.getElementById('ff-lock-btn').disabled = window.ffState.selectedGolds.length !== 4;
+        };
+
+        window.ffLockInGolds = async function() {
+            const gameRef = doc(db, 'ffgames', window.appState.roomId);
+            const updateData = {};
+            updateData[`${window.ffState.playerNum}_golds`] = window.ffState.selectedGolds;
+            
+            // Check if both players locked in
+            const gameSnap = await getDocs(query(collection(db, 'ffgames'), where('roomId', '==', window.appState.roomId)));
+            const game = gameSnap.docs[0].data();
+            const opp = window.ffState.playerNum === 'p1' ? 'p2' : 'p1';
+            
+            if (game[`${opp}_golds`]) {
+                updateData.status = 'guessing';
+            }
+            
+            await updateDoc(gameRef, updateData);
+        };
+
+        window.ffGuessBlock = async function(index) {
+            if (window.ffState.myGuesses.some(g => g.index === index)) return;
+            if (window.ffState.myGuesses.length >= 4) return;
+            
+            const gameRef = doc(db, 'ffgames', window.appState.roomId);
+            const opp = window.ffState.playerNum === 'p1' ? 'p2' : 'p1';
+            const isGold = window.ffState.oppGolds.includes(index);
+            
+            const newGuess = {
+                index: index,
+                isGold: isGold,
+                timestamp: Date.now()
+            };
+            
+            let newStatus = 'guessing';
+            let nextTurn = opp;
+            
+            // Check if player won
+            const guessedGolds = [...window.ffState.myGuesses.map(g => g.index), index].filter(idx => window.ffState.oppGolds.includes(idx));
+            if (guessedGolds.length === 4) {
+                newStatus = `${window.ffState.playerNum}_won`;
+            } else if (window.ffState.myGuesses.length + 1 === 4 && window.ffState.oppGuesses.length === 4) {
+                // Both players out of guesses
+                const oppGuessedGolds = window.ffState.oppGuesses.filter(g => g.isGold).length;
+                if (oppGuessedGolds < 4) {
+                    newStatus = `${window.ffState.playerNum}_won`;
+                } else {
+                    newStatus = 'draw';
+                }
+            }
+            
+            await updateDoc(gameRef, {
+                [`${window.ffState.playerNum}_guesses`]: arrayUnion(newGuess),
+                turn: nextTurn,
+                status: newStatus
+            });
+        };
+
+        window.ffRenderBoards = function() {
+            // Your board (opponent guessing)
+            window.ffState.oppGuesses.forEach(guess => {
+                const cell = document.getElementById(`ff-your-${guess.index}`);
+                if (guess.isGold) {
+                    cell.textContent = '✓';
+                    cell.classList.add('bg-green-300', 'border-green-600');
+                } else {
+                    cell.textContent = '✗';
+                    cell.classList.add('bg-red-300', 'border-red-600');
+                }
+            });
+            
+            // Opponent's board (your guessing)
+            window.ffState.myGuesses.forEach(guess => {
+                const cell = document.getElementById(`ff-guess-${guess.index}`);
+                if (guess.isGold) {
+                    cell.textContent = '✓';
+                    cell.classList.remove('bg-blue-200', 'border-blue-400', 'hover:bg-blue-300');
+                    cell.classList.add('bg-green-300', 'border-green-600');
+                } else {
+                    cell.textContent = '✗';
+                    cell.classList.remove('bg-blue-200', 'border-blue-400', 'hover:bg-blue-300');
+                    cell.classList.add('bg-red-300', 'border-red-600');
+                }
+            });
+            
+            document.getElementById('ff-you-guessed').textContent = window.ffState.myGuesses.length;
+            document.getElementById('ff-opp-guessed').textContent = window.ffState.oppGuesses.length;
+        };
+
+        window.ffCheckGameEnd = function() {
+            const myGoldCount = window.ffState.myGuesses.filter(g => g.isGold).length;
+            const oppGoldCount = window.ffState.oppGuesses.filter(g => g.isGold).length;
+            
+            if (myGoldCount === 4) {
+                window.ffState.winner = window.ffState.playerNum;
+                window.ffState.gameEnded = true;
+                ffShowGameEnd();
+            } else if (oppGoldCount === 4) {
+                window.ffState.winner = window.ffState.playerNum === 'p1' ? 'p2' : 'p1';
+                window.ffState.gameEnded = true;
+                ffShowGameEnd();
+            }
+        };
+
+        window.ffShowGameEnd = function() {
+            if (window.ffState.gameEnded) return;
+            window.ffState.gameEnded = true;
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+            
+            let title = '', color = '', message = '';
+            if (window.ffState.winner === window.ffState.playerNum) {
+                title = '🎉 YOU WIN!';
+                color = 'text-green-600';
+                message = 'You found all 4 gold blocks first! 1 Point for War.';
+            } else {
+                title = '😢 YOU LOSE!';
+                color = 'text-red-600';
+                message = 'Opponent found all 4 gold blocks first. 0 Points for War.';
+            }
+            
+            modal.innerHTML = `<div class="bg-white rounded-2xl p-8 max-w-md text-center">
+                <h3 class="text-3xl font-bold mb-4 ${color}">${title}</h3>
+                <p class="text-gray-700 mb-6">${message}</p>
+                <button onclick="backToLobby()" class="bg-pink-600 text-white font-bold py-2 px-6 rounded-lg">Back to Lobby</button>
+            </div>`;
+            document.body.appendChild(modal);
+        };
+
         window.startWar = function() {
             alert('Declare a War - Coming Soon!');
         };
