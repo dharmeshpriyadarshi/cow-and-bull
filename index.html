@@ -115,6 +115,93 @@
             </div>
         </div>
 
+        <!-- WAR SELECTION SCREEN -->
+        <div id="war-screen" class="hidden min-h-screen flex items-center justify-center">
+            <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 fade-in">
+                <button onclick="warGoBack()" class="mb-4 text-purple-600 hover:text-purple-800 font-semibold">← Back</button>
+                <h2 class="text-4xl font-black text-center text-red-600 mb-2">⚔️ DECLARE A WAR</h2>
+                <p class="text-center text-gray-600 mb-8">Challenge another player to battle through all 5 games!</p>
+                
+                <div class="bg-red-50 p-6 rounded-lg mb-6 border-2 border-red-300">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">Create New War</h3>
+                    <button onclick="confirmWar()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg transition shadow-lg">
+                        ⚔️ Create War Room
+                    </button>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-lg border-2 border-blue-300">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">Join Existing War</h3>
+                    <input type="text" id="war-code-join" maxlength="6" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition mb-3 text-center tracking-widest text-lg" placeholder="e.g. ABC123">
+                    <button onclick="warJoinConfirm()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition shadow-lg">
+                        🔗 Join War
+                    </button>
+                    <p id="war-join-message" class="text-red-500 text-sm mt-2 h-5"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- WAR LOBBY SCREEN -->
+        <div id="war-lobby-screen" class="hidden min-h-screen flex items-center justify-center">
+            <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 fade-in">
+                <h2 class="text-3xl font-bold text-center text-red-600 mb-6">⚔️ WAR LOBBY</h2>
+                
+                <div class="bg-gradient-to-r from-purple-100 to-red-100 p-6 rounded-lg mb-6 border-2 border-red-300">
+                    <p class="text-sm text-gray-600 mb-2">War Code</p>
+                    <p class="text-2xl font-black text-red-600 text-center tracking-widest mb-4" id="war-code-display"></p>
+                    <p class="text-center text-gray-700 font-semibold">Share this code with your opponent!</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-blue-50 p-4 rounded-lg border-2 border-blue-300">
+                        <p class="text-sm text-gray-600">You</p>
+                        <p class="text-lg font-bold text-blue-600" id="war-your-name"></p>
+                    </div>
+                    <div class="bg-orange-50 p-4 rounded-lg border-2 border-orange-300">
+                        <p class="text-sm text-gray-600">Opponent</p>
+                        <p class="text-lg font-bold text-orange-600" id="war-opponent-name">Waiting...</p>
+                    </div>
+                </div>
+
+                <div id="war-waiting-message" class="text-center text-gray-600 mb-4">
+                    <p class="text-sm">Waiting for opponent to join...</p>
+                </div>
+
+                <button id="war-start-button" onclick="startWarGames()" disabled class="w-full bg-red-500 hover:bg-red-600 disabled:bg-gray-300 text-white font-bold py-3 rounded-lg transition shadow-lg">
+                    ⚔️ START WAR
+                </button>
+            </div>
+        </div>
+
+        <!-- WAR GAME SCREEN -->
+        <div id="war-game-screen" class="hidden min-h-screen bg-gradient-to-br from-red-900 via-purple-900 to-indigo-900 p-4">
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-2xl shadow-2xl p-4 mb-4">
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h2 id="war-game-title" class="text-2xl font-bold text-gray-800"></h2>
+                            <span id="war-game-number" class="text-sm font-semibold text-gray-600"></span>
+                        </div>
+                        <div id="war-game-progress" class="flex gap-1"></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div class="bg-blue-100 p-2 rounded-lg">
+                            <p class="text-xs text-gray-600">Player 1</p>
+                            <p class="text-lg font-bold text-blue-600" id="war-p1-name"></p>
+                            <p class="text-xl font-black text-blue-700" id="war-p1-score">0</p>
+                        </div>
+                        <div class="bg-orange-100 p-2 rounded-lg">
+                            <p class="text-xs text-gray-600">Player 2</p>
+                            <p class="text-lg font-bold text-orange-600" id="war-p2-name"></p>
+                            <p class="text-xl font-black text-orange-700" id="war-p2-score">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="game-container-war" class="bg-white rounded-2xl shadow-2xl p-6"></div>
+            </div>
+        </div>
+
         <!-- GAME CONTAINER -->
         <div id="game-container" class="hidden"></div>
 
@@ -122,7 +209,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, getDocs, updateDoc, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, getDocs, updateDoc, arrayUnion, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAydXymmuO9r9xFC5S8b-eMI-dLnbrcP1w",
@@ -273,7 +360,13 @@
         };
 
         window.loadGame = function(gameType) {
-            switch(gameType) {
+            const isWarMode = gameType.includes('_war');
+            const actualGameType = gameType.replace('_war', '');
+            
+            // Set global container for game rendering
+            window.gameContainerElement = isWarMode ? 'game-container-war' : 'game-container';
+            
+            switch(actualGameType) {
                 case 'codebreaker':
                     loadCodeBreakerGame();
                     break;
@@ -294,7 +387,8 @@
 
         // ==================== CODE BREAKER GAME ====================
         window.loadCodeBreakerGame = function() {
-            const container = document.getElementById('game-container');
+            const containerId = window.gameContainerElement || 'game-container';
+            const container = document.getElementById(containerId);
             container.innerHTML = `
                 <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-8 fade-in">
                     <div class="flex justify-between items-center mb-6">
@@ -480,6 +574,23 @@
             if (window.cbState.gameEnded) return;
             window.cbState.gameEnded = true;
             
+            // Check if in war mode
+            const isWarMode = window.appState.currentGame && window.appState.currentGame.includes('_war');
+            
+            let result = '';
+            if (game.status === `${window.cbState.playerNum}_won`) {
+                result = 'win';
+            } else if (game.status === 'draw') {
+                result = 'draw';
+            } else {
+                result = 'lose';
+            }
+            
+            if (isWarMode) {
+                warGameEnd(result);
+                return;
+            }
+            
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
             let title = '', color = '';
@@ -505,7 +616,8 @@
 
         // ==================== TIC TAC TOE GAME ====================
         window.loadTicTacToeGame = function() {
-            const container = document.getElementById('game-container');
+            const containerId = window.gameContainerElement || 'game-container';
+            const container = document.getElementById(containerId);
             container.innerHTML = `
                 <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl p-8 fade-in">
                     <div class="flex justify-between items-center mb-6">
@@ -709,6 +821,24 @@
 
         window.tttShowFinalResult = function() {
             window.tttState.gameOverall = true;
+            
+            // Check if in war mode
+            const isWarMode = window.appState.currentGame && window.appState.currentGame.includes('_war');
+            
+            let result = '';
+            if (window.tttState.yourWins > window.tttState.oppWins) {
+                result = 'win';
+            } else if (window.tttState.oppWins > window.tttState.yourWins) {
+                result = 'lose';
+            } else {
+                result = 'draw';
+            }
+            
+            if (isWarMode) {
+                warGameEnd(result);
+                return;
+            }
+            
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
             
@@ -737,7 +867,8 @@
 
         // ==================== WAVELENGTH GAME ====================
         window.loadWavelengthGame = function() {
-            const container = document.getElementById('game-container');
+            const containerId = window.gameContainerElement || 'game-container';
+            const container = document.getElementById(containerId);
             container.innerHTML = `
                 <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-8 fade-in">
                     <div class="flex justify-between items-center mb-6">
@@ -1041,6 +1172,23 @@
         };
 
         window.wlShowGameEnd = function() {
+            // Check if in war mode
+            const isWarMode = window.appState.currentGame && window.appState.currentGame.includes('_war');
+            
+            let result = '';
+            if (window.wlState.yourPoints > window.wlState.oppPoints) {
+                result = 'win';
+            } else if (window.wlState.oppPoints > window.wlState.yourPoints) {
+                result = 'lose';
+            } else {
+                result = 'draw';
+            }
+            
+            if (isWarMode) {
+                warGameEnd(result);
+                return;
+            }
+            
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
             
@@ -1069,7 +1217,8 @@
 
         // ==================== STONE PAPER SCISSOR GAME ====================
         window.loadStonePaperGame = function() {
-            const container = document.getElementById('game-container');
+            const containerId = window.gameContainerElement || 'game-container';
+            const container = document.getElementById(containerId);
             container.innerHTML = `
                 <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl p-8 fade-in">
                     <div class="flex justify-between items-center mb-6">
@@ -1284,6 +1433,23 @@
         };
 
         window.spsShowFinalResult = function() {
+            // Check if in war mode
+            const isWarMode = window.appState.currentGame && window.appState.currentGame.includes('_war');
+            
+            let result = '';
+            if (window.spsState.yourWins > window.spsState.oppWins) {
+                result = 'win';
+            } else if (window.spsState.oppWins > window.spsState.yourWins) {
+                result = 'lose';
+            } else {
+                result = 'draw';
+            }
+            
+            if (isWarMode) {
+                warGameEnd(result);
+                return;
+            }
+            
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
             
@@ -1314,7 +1480,8 @@
 
         // ==================== FAST FOUR GAME ====================
         window.loadFastFourGame = function() {
-            const container = document.getElementById('game-container');
+            const containerId = window.gameContainerElement || 'game-container';
+            const container = document.getElementById(containerId);
             container.innerHTML = `
                 <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-8 fade-in">
                     <div class="flex justify-between items-center mb-6">
@@ -1596,6 +1763,16 @@
             if (window.ffState.gameEnded) return;
             window.ffState.gameEnded = true;
             
+            // Check if in war mode
+            const isWarMode = window.appState.currentGame && window.appState.currentGame.includes('_war');
+            
+            let result = window.ffState.winner === window.ffState.playerNum ? 'win' : 'lose';
+            
+            if (isWarMode) {
+                warGameEnd(result);
+                return;
+            }
+            
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
             
@@ -1619,7 +1796,293 @@
         };
 
         window.startWar = function() {
-            alert('Declare a War - Coming Soon!');
+            const username = document.getElementById('username-input').value.trim();
+            if (!username) {
+                alert('Please enter your name first!');
+                return;
+            }
+            window.appState.username = username;
+            document.getElementById('landing-screen').classList.add('hidden');
+            document.getElementById('war-screen').classList.remove('hidden');
+        };
+
+        window.warGoBack = function() {
+            document.getElementById('war-screen').classList.add('hidden');
+            document.getElementById('landing-screen').classList.remove('hidden');
+        };
+
+        window.confirmWar = async function() {
+            const warCode = Math.random().toString(36).substr(2, 6).toUpperCase();
+            window.appState.warCode = warCode;
+            window.appState.warRoomId = warCode;
+            window.appState.playerNumber = 1;
+            
+            try {
+                const warRef = doc(db, 'wars', warCode);
+                await setDoc(warRef, {
+                    id: warCode,
+                    p1_id: window.appState.userId,
+                    p1_name: window.appState.username,
+                    p2_id: null,
+                    p2_name: null,
+                    status: 'waiting',
+                    gameSequence: ['codebreaker', 'tictactoe', 'stonepaper', 'fastfour', 'wavelength'],
+                    currentGameIndex: 0,
+                    p1_points: 0,
+                    p2_points: 0,
+                    gameResults: {},
+                    createdAt: new Date().toISOString()
+                });
+                
+                document.getElementById('war-screen').classList.add('hidden');
+                document.getElementById('war-lobby-screen').classList.remove('hidden');
+                document.getElementById('war-code-display').textContent = warCode;
+                document.getElementById('war-your-name').textContent = window.appState.username;
+                listenToWarStatus();
+            } catch (error) {
+                console.error('Error creating war:', error);
+            }
+        };
+
+        window.warJoinConfirm = async function() {
+            const warCode = document.getElementById('war-code-join').value.trim().toUpperCase();
+            if (!warCode) {
+                document.getElementById('war-join-message').textContent = 'Please enter a war code';
+                return;
+            }
+            
+            try {
+                const warRef = doc(db, 'wars', warCode);
+                const warSnap = await getDoc(warRef);
+                
+                if (!warSnap.exists()) {
+                    document.getElementById('war-join-message').textContent = 'War code not found';
+                    return;
+                }
+                
+                const warData = warSnap.data();
+                if (warData.status === 'in-progress' || warData.status === 'completed') {
+                    document.getElementById('war-join-message').textContent = 'War already in progress or completed';
+                    return;
+                }
+                
+                if (warData.p2_id) {
+                    document.getElementById('war-join-message').textContent = 'War room is full';
+                    return;
+                }
+                
+                window.appState.warCode = warCode;
+                window.appState.warRoomId = warCode;
+                window.appState.playerNumber = 2;
+                
+                await updateDoc(warRef, {
+                    p2_id: window.appState.userId,
+                    p2_name: window.appState.username,
+                    status: 'in-progress'
+                });
+                
+                document.getElementById('war-screen').classList.add('hidden');
+                document.getElementById('war-lobby-screen').classList.remove('hidden');
+                document.getElementById('war-code-display').textContent = warCode;
+                document.getElementById('war-your-name').textContent = window.appState.username;
+                listenToWarStatus();
+            } catch (error) {
+                console.error('Error joining war:', error);
+                document.getElementById('war-join-message').textContent = 'Error joining war';
+            }
+        };
+
+        window.listenToWarStatus = function() {
+            const warRef = doc(db, 'wars', window.appState.warCode);
+            onSnapshot(warRef, (warSnap) => {
+                if (!warSnap.exists()) return;
+                
+                const warData = warSnap.data();
+                window.appState.warData = warData;
+                
+                const opponentName = window.appState.playerNumber === 1 ? warData.p2_name : warData.p1_name;
+                document.getElementById('war-opponent-name').textContent = opponentName || 'Waiting for opponent...';
+                
+                if (warData.status === 'in-progress' && opponentName && warData.p1_id && warData.p2_id) {
+                    document.getElementById('war-start-button').disabled = false;
+                    document.getElementById('war-waiting-message').classList.add('hidden');
+                } else if (warData.status !== 'in-progress' && warData.p1_id && warData.p2_id) {
+                    document.getElementById('war-start-button').disabled = false;
+                    document.getElementById('war-waiting-message').classList.add('hidden');
+                }
+            });
+        };
+
+        window.startWarGames = async function() {
+            if (!window.appState.warData.p1_id || !window.appState.warData.p2_id) {
+                alert('Waiting for opponent to join...');
+                return;
+            }
+            
+            document.getElementById('war-lobby-screen').classList.add('hidden');
+            document.getElementById('war-game-screen').classList.remove('hidden');
+            startNextWarGame();
+        };
+
+        window.startNextWarGame = async function() {
+            const gameSeq = window.appState.warData.gameSequence;
+            const currentIdx = window.appState.warData.currentGameIndex;
+            
+            if (currentIdx >= gameSeq.length) {
+                showWarSummary();
+                return;
+            }
+            
+            const currentGame = gameSeq[currentIdx];
+            window.appState.currentGame = currentGame + '_war';
+            window.appState.roomId = window.appState.warCode; // Use war code as roomId for games
+            
+            const gameTitle = {
+                'codebreaker': '🔐 Code Breaker',
+                'tictactoe': '⭕ Tic Tac Toe',
+                'stonepaper': '✋ Stone Paper',
+                'fastfour': '🎯 Fast Four',
+                'wavelength': '📊 Wavelength'
+            };
+            
+            document.getElementById('war-game-title').textContent = gameTitle[currentGame];
+            document.getElementById('war-game-number').textContent = `Game ${currentIdx + 1} of 5`;
+            
+            // Update player names and scores
+            document.getElementById('war-p1-name').textContent = window.appState.warData.p1_name;
+            document.getElementById('war-p2-name').textContent = window.appState.warData.p2_name;
+            document.getElementById('war-p1-score').textContent = window.appState.warData.p1_points.toFixed(1);
+            document.getElementById('war-p2-score').textContent = window.appState.warData.p2_points.toFixed(1);
+            
+            document.getElementById('war-game-progress').innerHTML = '';
+            for (let i = 0; i < gameSeq.length; i++) {
+                const status = i < currentIdx ? 'done' : i === currentIdx ? 'active' : 'pending';
+                const statusClass = status === 'done' ? 'bg-green-500' : status === 'active' ? 'bg-blue-500' : 'bg-gray-300';
+                document.getElementById('war-game-progress').innerHTML += `<div class="${statusClass} h-2 flex-1"></div>`;
+            }
+            
+            loadGame(currentGame);
+        };
+
+        window.warGameEnd = async function(result) {
+            const currentIdx = window.appState.warData.currentGameIndex;
+            const gameSeq = window.appState.warData.gameSequence;
+            const currentGame = gameSeq[currentIdx];
+            
+            let points = 0;
+            if (result === 'win') {
+                points = 1;
+            } else if (result === 'draw') {
+                points = 0.5;
+            } else {
+                points = 0;
+            }
+            
+            const fieldName = window.appState.playerNumber === 1 ? 'p1_points' : 'p2_points';
+            const resultFieldName = window.appState.playerNumber === 1 ? 'p1_result' : 'p2_result';
+            
+            // Store this player's result
+            const updateObj = {
+                [fieldName]: window.appState.warData[fieldName] + points,
+                [`gameResults.${currentGame}.${resultFieldName}`]: result
+            };
+            
+            try {
+                const warRef = doc(db, 'wars', window.appState.warCode);
+                await updateDoc(warRef, updateObj);
+                
+                // Wait for both players' results, then advance
+                const checkInterval = setInterval(async () => {
+                    const warSnap = await getDoc(warRef);
+                    if (warSnap.exists()) {
+                        const warData = warSnap.data();
+                        const gameResult = warData.gameResults?.[currentGame];
+                        
+                        // Check if both players have reported
+                        if (gameResult?.p1_result && gameResult?.p2_result) {
+                            clearInterval(checkInterval);
+                            
+                            // Only player 1 advances the game index
+                            if (window.appState.playerNumber === 1) {
+                                await updateDoc(warRef, {
+                                    currentGameIndex: currentIdx + 1
+                                });
+                            }
+                            
+                            // Refresh war data
+                            const updatedSnap = await getDoc(warRef);
+                            window.appState.warData = updatedSnap.data();
+                            
+                            setTimeout(() => {
+                                if (currentIdx + 1 >= gameSeq.length) {
+                                    showWarSummary();
+                                } else {
+                                    startNextWarGame();
+                                }
+                            }, 1500);
+                        }
+                    }
+                }, 500);
+            } catch (error) {
+                console.error('Error updating war game:', error);
+            }
+        };
+
+        window.showWarSummary = function() {
+            const warData = window.appState.warData;
+            const p1Points = warData.p1_points;
+            const p2Points = warData.p2_points;
+            
+            let result = '';
+            if (p1Points > p2Points) {
+                result = window.appState.playerNumber === 1 ? '🎉 YOU WIN THE WAR!' : '😢 YOU LOSE THE WAR!';
+            } else if (p2Points > p1Points) {
+                result = window.appState.playerNumber === 2 ? '🎉 YOU WIN THE WAR!' : '😢 YOU LOSE THE WAR!';
+            } else {
+                result = '🤝 THE WAR IS A DRAW!';
+            }
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4';
+            
+            let resultsHTML = '<div class="mb-4">';
+            const games = ['codebreaker', 'tictactoe', 'stonepaper', 'fastfour', 'wavelength'];
+            const gameNames = ['Code Breaker', 'Tic Tac Toe', 'Stone Paper', 'Fast Four', 'Wavelength'];
+            
+            games.forEach((game, idx) => {
+                const result = warData.gameResults[game];
+                const p1pts = result?.p1_points || 0;
+                const p2pts = result?.p2_points || 0;
+                resultsHTML += `<div class="flex justify-between text-gray-700 mb-2"><span>${gameNames[idx]}</span><span>${p1pts} - ${p2pts}</span></div>`;
+            });
+            resultsHTML += '</div>';
+            
+            modal.innerHTML = `<div class="bg-white rounded-2xl p-8 max-w-md text-center">
+                <h3 class="text-4xl font-black mb-4 text-purple-600">${result}</h3>
+                <div class="bg-gray-100 p-4 rounded-lg mb-6">
+                    ${resultsHTML}
+                    <div class="border-t pt-3 mt-3 font-bold">
+                        <div class="flex justify-between text-lg">
+                            <span>${warData.p1_name}</span><span>${p1Points}</span>
+                        </div>
+                        <div class="flex justify-between text-lg">
+                            <span>${warData.p2_name}</span><span>${p2Points}</span>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="exitWarAndReturn()" class="bg-purple-600 text-white font-bold py-2 px-6 rounded-lg">Back to Home</button>
+            </div>`;
+            document.body.appendChild(modal);
+        };
+
+        window.exitWarAndReturn = function() {
+            window.appState.warCode = null;
+            window.appState.warData = null;
+            document.querySelectorAll('.fixed').forEach(el => el.remove());
+            document.getElementById('war-game-screen').classList.add('hidden');
+            document.getElementById('war-lobby-screen').classList.add('hidden');
+            document.getElementById('game-container').classList.add('hidden');
+            document.getElementById('landing-screen').classList.remove('hidden');
         };
 
         console.log('Ka re? Platform Ready');
