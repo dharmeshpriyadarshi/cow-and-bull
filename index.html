@@ -735,9 +735,338 @@
             document.body.appendChild(modal);
         };
 
+        // ==================== WAVELENGTH GAME ====================
         window.loadWavelengthGame = function() {
-            alert('Wavelength - Coming Soon!');
+            const container = document.getElementById('game-container');
+            container.innerHTML = `
+                <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-8 fade-in">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-cyan-600">📊 Wavelength</h2>
+                        <button onclick="backToLobby()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Back</button>
+                    </div>
+                    
+                    <div id="wl-status" class="bg-cyan-100 text-cyan-800 p-4 rounded-lg mb-6 font-semibold text-center">Loading game...</div>
+
+                    <!-- Round Info -->
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-blue-50 p-3 rounded-lg text-center border-2 border-blue-300">
+                            <p class="text-sm text-gray-600">Round</p>
+                            <p class="text-2xl font-bold text-blue-600" id="wl-round">1/5</p>
+                        </div>
+                        <div class="bg-purple-50 p-3 rounded-lg text-center border-2 border-purple-300">
+                            <p class="text-sm text-gray-600">Your Points</p>
+                            <p class="text-2xl font-bold text-purple-600" id="wl-your-points">0</p>
+                        </div>
+                        <div class="bg-orange-50 p-3 rounded-lg text-center border-2 border-orange-300">
+                            <p class="text-sm text-gray-600">Opponent Points</p>
+                            <p class="text-2xl font-bold text-orange-600" id="wl-opp-points">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Spectrum -->
+                    <div id="wl-spectrum-view" class="mb-8">
+                        <div class="bg-gray-100 p-6 rounded-lg mb-4">
+                            <div class="flex justify-between mb-2">
+                                <span class="font-bold text-gray-700" id="wl-left-label">---</span>
+                                <span class="font-bold text-gray-700" id="wl-right-label">---</span>
+                            </div>
+                            <div class="w-full h-12 bg-gradient-to-r from-blue-400 to-red-400 rounded-lg mb-4 relative" id="wl-spectrum-bar">
+                                <div id="wl-target-marker" class="hidden absolute w-1 h-14 bg-black -top-1 transform -translate-x-1/2"></div>
+                                <div id="wl-guess-marker" class="hidden absolute w-2 h-14 bg-green-500 -top-1 transform -translate-x-1/2 border-2 border-green-600"></div>
+                            </div>
+                        </div>
+
+                        <!-- Clue Display -->
+                        <div id="wl-clue-section" class="mb-4">
+                            <p class="text-sm text-gray-600 mb-2">Clue:</p>
+                            <div class="bg-yellow-100 p-4 rounded-lg border-2 border-yellow-400 text-center">
+                                <p id="wl-clue" class="text-2xl font-bold text-gray-800">Waiting for clue...</p>
+                            </div>
+                        </div>
+
+                        <!-- Clue Input (Giver Only) -->
+                        <div id="wl-give-clue" class="hidden mb-4">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Give a One-Word Clue:</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="wl-clue-input" maxlength="30" class="flex-grow p-3 border-2 border-gray-300 rounded-lg focus:border-cyan-500" placeholder="Enter your clue...">
+                                <button onclick="wlSubmitClue()" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-6 rounded-lg">Submit Clue</button>
+                            </div>
+                        </div>
+
+                        <!-- Guess Slider (Guesser Only) -->
+                        <div id="wl-guess-section" class="hidden mb-4">
+                            <p class="text-sm text-gray-600 mb-2">Your Guess (0-100):</p>
+                            <div class="flex gap-3">
+                                <input type="range" id="wl-guess-slider" min="0" max="100" value="50" class="flex-grow" oninput="wlUpdateSliderDisplay(this.value)">
+                                <span id="wl-guess-display" class="font-bold text-xl text-gray-800 w-12 text-center">50</span>
+                            </div>
+                            <button onclick="wlSubmitGuess()" class="w-full mt-3 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg">Submit Guess</button>
+                        </div>
+                    </div>
+
+                    <!-- Result -->
+                    <div id="wl-result" class="hidden bg-green-50 border-2 border-green-300 p-4 rounded-lg">
+                        <p id="wl-result-text" class="text-center text-lg font-bold text-gray-800 mb-3"></p>
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div>
+                                <p class="text-sm text-gray-600">Target</p>
+                                <p class="text-2xl font-bold text-gray-800" id="wl-result-target"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Your Guess</p>
+                                <p class="text-2xl font-bold text-gray-800" id="wl-result-guess"></p>
+                            </div>
+                        </div>
+                        <p id="wl-points-earned" class="text-center mt-3 font-bold text-cyan-600"></p>
+                    </div>
+                </div>
+            `;
+
+            window.wlState = {
+                roomId: window.appState.roomId,
+                playerId: window.appState.userId,
+                playerNum: window.appState.playerNumber,
+                currentRound: 1,
+                maxRounds: 5,
+                yourPoints: 0,
+                oppPoints: 0,
+                spectrums: [
+                    {left: 'Hot', right: 'Cold'},
+                    {left: 'Safe', right: 'Dangerous'},
+                    {left: 'Light', right: 'Dark'},
+                    {left: 'Happy', right: 'Sad'},
+                    {left: 'Fast', right: 'Slow'}
+                ],
+                currentSpectrum: null,
+                target: null,
+                clue: null,
+                guess: null,
+                roundEnded: false,
+                gameEnded: false,
+                isClueGiver: true
+            };
+
+            wlInitialize();
         };
+
+        window.wlInitialize = async function() {
+            const gameRef = doc(db, 'wlgames', window.appState.roomId);
+            const existing = await getDocs(query(collection(db, 'wlgames'), where('roomId', '==', window.appState.roomId)));
+            
+            if (existing.empty) {
+                await setDoc(gameRef, {
+                    roomId: window.appState.roomId,
+                    round: 1,
+                    p1_points: 0,
+                    p2_points: 0,
+                    p1_is_giver: true,
+                    p2_clue: null,
+                    p1_clue: null,
+                    p2_guess: null,
+                    p1_guess: null,
+                    spectrum_index: 0,
+                    target: null,
+                    status: 'clue',
+                    createdAt: Date.now()
+                });
+            }
+            
+            wlListen();
+        };
+
+        window.wlListen = function() {
+            const gameRef = doc(db, 'wlgames', window.appState.roomId);
+            onSnapshot(gameRef, (doc) => {
+                if (!doc.exists()) return;
+                const game = doc.data();
+                
+                window.wlState.currentRound = game.round || 1;
+                window.wlState.yourPoints = window.wlState.playerNum === 'p1' ? (game.p1_points || 0) : (game.p2_points || 0);
+                window.wlState.oppPoints = window.wlState.playerNum === 'p1' ? (game.p2_points || 0) : (game.p1_points || 0);
+                window.wlState.isClueGiver = window.wlState.playerNum === 'p1' ? (game.p1_is_giver || true) : !(game.p1_is_giver || true);
+                window.wlState.currentSpectrum = window.wlState.spectrums[game.spectrum_index || 0];
+                window.wlState.target = game.target;
+                window.wlState.clue = window.wlState.isClueGiver ? (window.wlState.playerNum === 'p1' ? game.p1_clue : game.p2_clue) : (window.wlState.playerNum === 'p1' ? game.p2_clue : game.p1_clue);
+                
+                document.getElementById('wl-round').textContent = `${window.wlState.currentRound}/5`;
+                document.getElementById('wl-your-points').textContent = window.wlState.yourPoints;
+                document.getElementById('wl-opp-points').textContent = window.wlState.oppPoints;
+                document.getElementById('wl-left-label').textContent = window.wlState.currentSpectrum.left;
+                document.getElementById('wl-right-label').textContent = window.wlState.currentSpectrum.right;
+                
+                if (game.status === 'clue') {
+                    document.getElementById('wl-spectrum-view').classList.remove('hidden');
+                    document.getElementById('wl-give-clue').classList.toggle('hidden', !window.wlState.isClueGiver);
+                    document.getElementById('wl-guess-section').classList.add('hidden');
+                    document.getElementById('wl-result').classList.add('hidden');
+                    
+                    if (window.wlState.isClueGiver) {
+                        document.getElementById('wl-status').textContent = 'You are the Clue Giver - Give a one-word clue!';
+                        document.getElementById('wl-clue').textContent = 'Waiting for your clue...';
+                    } else {
+                        document.getElementById('wl-status').textContent = 'Waiting for clue...';
+                        if (game[window.wlState.playerNum === 'p1' ? 'p2_clue' : 'p1_clue']) {
+                            document.getElementById('wl-clue').textContent = game[window.wlState.playerNum === 'p1' ? 'p2_clue' : 'p1_clue'];
+                            document.getElementById('wl-give-clue').classList.add('hidden');
+                        }
+                    }
+                } else if (game.status === 'guess') {
+                    document.getElementById('wl-give-clue').classList.add('hidden');
+                    document.getElementById('wl-guess-section').classList.toggle('hidden', !(!window.wlState.isClueGiver));
+                    document.getElementById('wl-result').classList.add('hidden');
+                    document.getElementById('wl-clue').textContent = window.wlState.clue || 'Waiting for clue...';
+                    
+                    if (window.wlState.isClueGiver) {
+                        document.getElementById('wl-status').textContent = 'Opponent is guessing...';
+                    } else {
+                        document.getElementById('wl-status').textContent = 'Make your guess based on the clue!';
+                    }
+                } else if (game.status === 'result') {
+                    wlShowResult(game);
+                }
+            });
+        };
+
+        window.wlSubmitClue = async function() {
+            const clue = document.getElementById('wl-clue-input').value.trim();
+            if (!clue || clue.length === 0) {
+                alert('Please enter a clue');
+                return;
+            }
+            
+            const gameRef = doc(db, 'wlgames', window.appState.roomId);
+            const target = Math.floor(Math.random() * 101);
+            
+            const updateData = {};
+            updateData[`${window.wlState.playerNum}_clue`] = clue;
+            updateData.target = target;
+            updateData.status = 'guess';
+            
+            await updateDoc(gameRef, updateData);
+            document.getElementById('wl-clue-input').value = '';
+        };
+
+        window.wlUpdateSliderDisplay = function(value) {
+            document.getElementById('wl-guess-display').textContent = value;
+        };
+
+        window.wlSubmitGuess = async function() {
+            const guess = parseInt(document.getElementById('wl-guess-slider').value);
+            const gameRef = doc(db, 'wlgames', window.appState.roomId);
+            
+            // Calculate points based on proximity
+            const diff = Math.abs(guess - window.wlState.target);
+            let points = 0;
+            if (diff === 0) points = 10;
+            else if (diff <= 5) points = 7;
+            else if (diff <= 10) points = 5;
+            else if (diff <= 20) points = 3;
+            else if (diff <= 30) points = 1;
+            
+            const updateData = {};
+            updateData[`${window.wlState.playerNum}_guess`] = guess;
+            updateData.status = 'result';
+            updateData[window.wlState.playerNum === 'p1' ? 'p1_points' : 'p2_points'] = window.wlState.yourPoints + points;
+            
+            await updateDoc(gameRef, updateData);
+        };
+
+        window.wlShowResult = function(game) {
+            document.getElementById('wl-give-clue').classList.add('hidden');
+            document.getElementById('wl-guess-section').classList.add('hidden');
+            document.getElementById('wl-result').classList.remove('hidden');
+            
+            const guess = window.wlState.playerNum === 'p1' ? (game.p2_guess !== null ? game.p2_guess : 'N/A') : (game.p1_guess !== null ? game.p1_guess : 'N/A');
+            const diff = guess === 'N/A' ? 'N/A' : Math.abs(guess - window.wlState.target);
+            
+            let pointsEarned = 0;
+            if (diff !== 'N/A') {
+                if (diff === 0) pointsEarned = 10;
+                else if (diff <= 5) pointsEarned = 7;
+                else if (diff <= 10) pointsEarned = 5;
+                else if (diff <= 20) pointsEarned = 3;
+                else if (diff <= 30) pointsEarned = 1;
+            }
+            
+            document.getElementById('wl-result-target').textContent = window.wlState.target;
+            document.getElementById('wl-result-guess').textContent = guess;
+            document.getElementById('wl-points-earned').textContent = `Opponent earned: ${pointsEarned} points`;
+            document.getElementById('wl-result-text').textContent = diff === 'N/A' ? 'Round Complete' : `Distance: ${diff} positions`;
+            
+            // Show target marker
+            const marker = document.getElementById('wl-target-marker');
+            marker.classList.remove('hidden');
+            marker.style.left = window.wlState.target + '%';
+            
+            if (guess !== 'N/A') {
+                const guessMarker = document.getElementById('wl-guess-marker');
+                guessMarker.classList.remove('hidden');
+                guessMarker.style.left = guess + '%';
+            }
+            
+            if (!window.wlState.roundEnded) {
+                window.wlState.roundEnded = true;
+                if (window.wlState.currentRound < 5) {
+                    setTimeout(() => wlStartNewRound(), 3000);
+                } else {
+                    setTimeout(() => wlShowGameEnd(), 3000);
+                }
+            }
+        };
+
+        window.wlStartNewRound = async function() {
+            window.wlState.currentRound++;
+            window.wlState.roundEnded = false;
+            window.wlState.isClueGiver = !window.wlState.isClueGiver;
+            
+            // Reset UI
+            document.getElementById('wl-target-marker').classList.add('hidden');
+            document.getElementById('wl-guess-marker').classList.add('hidden');
+            document.getElementById('wl-guess-slider').value = 50;
+            document.getElementById('wl-guess-display').textContent = '50';
+            document.getElementById('wl-clue-input').value = '';
+            
+            const gameRef = doc(db, 'wlgames', window.appState.roomId);
+            await updateDoc(gameRef, {
+                round: window.wlState.currentRound,
+                spectrum_index: window.wlState.currentRound - 1,
+                p1_clue: null,
+                p2_clue: null,
+                p1_guess: null,
+                p2_guess: null,
+                target: null,
+                status: 'clue',
+                p1_is_giver: !((window.wlState.playerNum === 'p1' && window.wlState.isClueGiver) || (window.wlState.playerNum === 'p2' && !window.wlState.isClueGiver))
+            });
+        };
+
+        window.wlShowGameEnd = function() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+            
+            let title = '', color = '', message = '';
+            if (window.wlState.yourPoints > window.wlState.oppPoints) {
+                title = '🎉 YOU WIN!';
+                color = 'text-green-600';
+                message = `You scored ${window.wlState.yourPoints} points! 1 Point for War.`;
+            } else if (window.wlState.oppPoints > window.wlState.yourPoints) {
+                title = '😢 YOU LOSE!';
+                color = 'text-red-600';
+                message = `Opponent scored ${window.wlState.oppPoints} points. 0 Points for War.`;
+            } else {
+                title = '🤝 DRAW!';
+                color = 'text-yellow-600';
+                message = `Both scored ${window.wlState.yourPoints} points! 0.5 Points for War.`;
+            }
+            
+            modal.innerHTML = `<div class="bg-white rounded-2xl p-8 max-w-md text-center">
+                <h3 class="text-3xl font-bold mb-4 ${color}">${title}</h3>
+                <p class="text-gray-700 mb-6">${message}</p>
+                <button onclick="backToLobby()" class="bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg">Back to Lobby</button>
+            </div>`;
+            document.body.appendChild(modal);
+        };
+
         // ==================== STONE PAPER SCISSOR GAME ====================
         window.loadStonePaperGame = function() {
             const container = document.getElementById('game-container');
