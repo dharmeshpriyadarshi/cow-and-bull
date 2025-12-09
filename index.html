@@ -3,618 +3,524 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code Breaker Duel</title>
-    <!-- Tailwind CSS -->
+    <title>Ka re? - Multi-Game Battle Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inter Font -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
-
-    <!-- Main Game Container -->
-    <div id="game-container" class="w-full max-w-4xl bg-white shadow-2xl rounded-xl p-6 md:p-10 border-t-4 border-indigo-600">
-        <div class="flex justify-between items-center mb-4">
-            <h1 class="4xl font-extrabold text-indigo-800">Code Breaker Duel</h1>
-            <button onclick="window.location.reload()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 text-sm">
-                ↻ New Game
-            </button>
+<body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-screen">
+    
+    <div id="app" class="min-h-screen p-4 md:p-8">
+        
+        <!-- LANDING SCREEN -->
+        <div id="landing-screen" class="flex items-center justify-center min-h-screen">
+            <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 fade-in">
+                <h1 class="text-5xl font-black text-center text-purple-600 mb-2">Ka re?</h1>
+                <p class="text-center text-gray-600 mb-8 text-lg">Multi-Game Battle Platform</p>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Your Name</label>
+                    <input type="text" id="username-input" maxlength="20" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition" placeholder="Enter your name...">
+                </div>
+                
+                <div class="space-y-3">
+                    <button onclick="goToRoomSelect()" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-3 rounded-lg transition shadow-lg">
+                        🎮 Play a Game
+                    </button>
+                    <button onclick="startWar()" class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-3 rounded-lg transition shadow-lg">
+                        ⚔️ Declare a War
+                    </button>
+                </div>
+            </div>
         </div>
-        <p class="text-center text-gray-500 mb-8">A real-time 4-digit number guessing game.</p>
 
-        <!-- Dynamic Status Bar -->
-        <div id="status-bar" class="text-center p-3 mb-6 rounded-lg font-semibold transition-all duration-300">
-            <!-- Content changes dynamically: "Waiting for player 2", "Your Turn", "Opponent's Turn" -->
-        </div>
+        <!-- ROOM SELECTION SCREEN -->
+        <div id="room-screen" class="hidden min-h-screen flex items-center justify-center">
+            <div class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8 fade-in">
+                <button onclick="goBack()" class="mb-6 text-purple-600 hover:text-purple-800 font-semibold">← Back</button>
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Room Selection</h2>
+                
+                <div class="mb-6">
+                    <p class="text-gray-700 mb-3 font-semibold">Hello, <span id="room-username" class="text-purple-600"></span>!</p>
+                </div>
 
-        <!-- Section 1: Connection & Setup -->
-        <div id="setup-view">
-            <h2 class="text-2xl font-bold text-gray-700 mb-4">1. Create or Join Game</h2>
-            <div class="space-y-4">
-                <!-- Create Game -->
-                <div class="p-4 border border-indigo-200 rounded-lg bg-indigo-50">
-                    <button id="create-game-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-md">
-                        Create New Game
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg mb-6 border-2 border-green-300">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Create New Room</h3>
+                    <button onclick="createRoom()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg transition shadow-lg">
+                        ✨ Create Room
                     </button>
                 </div>
 
-                <!-- Join Game -->
-                <div class="p-4 border border-gray-200 rounded-lg">
-                    <label for="join-game-id" class="block text-sm font-medium text-gray-700 mb-2">Or Join by Game ID (6 digits)</label>
-                    <div class="flex space-x-2">
-                        <input type="text" id="join-game-id" maxlength="6" class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-lg tracking-widest text-center" placeholder="e.g. 1A2B3C">
-                        <button id="join-game-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200">
-                            Join
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border-2 border-blue-300">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Join Existing Room</h3>
+                    <input type="text" id="room-code-input" maxlength="6" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition mb-3 text-center tracking-widest text-lg" placeholder="e.g. ABC123">
+                    <button onclick="joinRoom()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition shadow-lg">
+                        🔗 Join Room
+                    </button>
+                    <p id="join-message" class="text-red-500 text-sm mt-2 h-5"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOBBY SCREEN -->
+        <div id="lobby-screen" class="hidden min-h-screen">
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-2xl shadow-2xl p-6 mb-6 fade-in">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-800">Game Lobby</h2>
+                            <p class="text-gray-600">Room: <span id="lobby-room-id" class="font-mono font-bold text-purple-600 text-lg"></span></p>
+                        </div>
+                        <button onclick="exitRoom()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition">
+                            Exit Room
                         </button>
                     </div>
-                </div>
-                <p id="setup-message" class="text-sm text-red-500 h-5"></p>
-            </div>
-        </div>
-
-        <!-- Section 2: Game Details & Set Code -->
-        <div id="code-setup-view" class="hidden">
-            <div class="flex flex-col md:flex-row justify-between items-center bg-gray-100 p-4 rounded-lg mb-6">
-                <p class="text-sm font-medium text-gray-600">Your ID: <span id="my-user-id" class="font-mono text-xs bg-gray-200 px-2 py-0.5 rounded"></span></p>
-                <p class="text-sm font-medium text-gray-600 mt-2 md:mt-0">Game ID: <span id="current-game-id" class="font-mono text-indigo-700 text-lg bg-indigo-100 px-2 py-0.5 rounded-md cursor-pointer" onclick="copyGameId()"></span></p>
-            </div>
-
-            <h2 class="text-2xl font-bold text-gray-700 mb-4">2. Set Your Secret 4-Digit Code</h2>
-            <div class="flex flex-col md:flex-row items-end space-y-4 md:space-y-0 md:space-x-4">
-                <div class="flex-grow w-full">
-                    <label for="secret-code-input" class="block text-sm font-medium text-gray-700 mb-1">Your Secret Code (4 unique digits 0-9)</label>
-                    <input type="text" id="secret-code-input" maxlength="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 text-3xl tracking-widest text-center font-mono" placeholder="1234">
-                </div>
-                <button id="set-code-btn" class="w-full md:w-auto flex-shrink-0 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 shadow-md">
-                    Lock In Code
-                </button>
-            </div>
-            <p id="code-setup-message" class="text-sm text-red-500 h-5 mt-2"></p>
-        </div>
-
-        <!-- Section 3: Gameplay Interface -->
-        <div id="gameplay-view" class="hidden mt-8">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Left: Guessing Area -->
-                <div id="guessing-area">
-                    <h2 class="text-2xl font-bold text-gray-700 mb-4">3. Make Your Guess</h2>
-                    <div class="bg-indigo-50 p-6 rounded-xl shadow-inner border border-indigo-200">
-                        <div class="space-y-4">
-                            <label for="guess-input" class="block text-sm font-medium text-indigo-700">Guess Opponent's Code (4 unique digits)</label>
-                            <input type="text" id="guess-input" maxlength="4" class="w-full p-3 border-2 border-indigo-400 rounded-lg text-3xl tracking-widest text-center font-mono focus:ring-indigo-500 focus:border-indigo-500" placeholder="? ? ? ?">
-                            <button id="submit-guess-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition duration-200 shadow-lg disabled:opacity-50" disabled>
-                                Submit Guess
-                            </button>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-50 p-4 rounded-lg border-2 border-blue-300">
+                            <p class="text-sm text-gray-600">Your Name</p>
+                            <p class="text-xl font-bold text-blue-600" id="lobby-your-name"></p>
+                        </div>
+                        <div class="bg-orange-50 p-4 rounded-lg border-2 border-orange-300">
+                            <p class="text-sm text-gray-600">Opponent</p>
+                            <p class="text-xl font-bold text-orange-600" id="lobby-opponent-name">Waiting...</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right: Game History -->
-                <div id="history-area">
-                    <h2 class="2xl font-bold text-gray-700 mb-4">Game History</h2>
-                    <div class="overflow-y-auto max-h-[400px] border border-gray-200 rounded-lg shadow-inner">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50 sticky top-0">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Turn</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Guess</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Bulls (✓)</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Cows (~)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="guess-history-body" class="bg-white divide-y divide-gray-100">
-                                <!-- History Rows go here -->
-                            </tbody>
-                        </table>
+                <div class="bg-white rounded-2xl shadow-2xl p-6 fade-in">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4">Select a Game</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <button onclick="selectGame('codebreaker')" class="p-6 bg-gradient-to-br from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-lg font-bold shadow-lg transition transform hover:scale-105">
+                            🔐 Code Breaker
+                        </button>
+                        <button onclick="selectGame('tictactoe')" class="p-6 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg font-bold shadow-lg transition transform hover:scale-105">
+                            ⭕ Tic Tac Toe
+                        </button>
+                        <button onclick="selectGame('wavelength')" class="p-6 bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-lg font-bold shadow-lg transition transform hover:scale-105">
+                            📊 Wavelength
+                        </button>
+                        <button onclick="selectGame('stonepaper')" class="p-6 bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg font-bold shadow-lg transition transform hover:scale-105">
+                            ✋ Stone Paper
+                        </button>
+                        <button onclick="selectGame('fastfour')" class="p-6 bg-gradient-to-br from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white rounded-lg font-bold shadow-lg transition transform hover:scale-105">
+                            🎯 Fast Four
+                        </button>
                     </div>
                 </div>
             </div>
-            
-            <p class="text-sm text-gray-500 mt-4 text-center">
-                **Bulls (✓):** Correct digit, correct position. &bull; 
-                **Cows (~):** Correct digit, wrong position.
-            </p>
         </div>
-        
-        <!-- Win/Loss Modal Placeholder -->
-        <div id="modal-container" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4">
-            <div id="game-modal" class="bg-white rounded-xl shadow-2xl p-8 max-w-sm text-center">
-                <h3 id="modal-title" class="text-3xl font-bold mb-4"></h3>
-                <p id="modal-message" class="text-gray-700 mb-6"></p>
-                <button onclick="window.location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
-                    Start New Game
-                </button>
-            </div>
-        </div>
+
+        <!-- GAME CONTAINER -->
+        <div id="game-container" class="hidden"></div>
 
     </div>
 
-    <!-- Firebase Imports and Script -->
     <script type="module">
-        // Global variables provided by the environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        
-        // >>> USER ACTION REQUIRED: If running locally (VS Code/GitHub), replace the content of 'myLocalConfig'
-        // >>> You MUST paste your Firebase Web App configuration here (e.g., apiKey, projectId, etc.).
-        const myLocalConfig = {
-          apiKey: "AIzaSyAydXymmuO9r9xFC5S8b-eMI-dLnbrcP1w", 
-          authDomain: "code-breaker-duel.firebaseapp.com",
-          projectId: "code-breaker-duel",
-          storageBucket: "code-breaker-duel.appspot.com",
-          messagingSenderId: "165393867049",
-          appId: "1:165393867049:web:2d50c1c9073a38d4b28038",
-          measurementId: "G-NDKVEEE4YR"
-        }; // <-- PASTE YOUR CONFIG OBJECT HERE
-        
-        // Use the environment config if available, otherwise use the user's local config.
-        const firebaseConfig = (typeof __firebase_config !== 'undefined' && __firebase_config !== 'null' && Object.keys(JSON.parse(__firebase_config)).length > 0)
-            ? JSON.parse(__firebase_config)
-            : myLocalConfig;
-
-        // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, getDocs, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, getDocs, updateDoc, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Initialize Firebase
-        setLogLevel('Debug');
-        let app, db;
-        let userId = null;
-        let isAuthReady = false;
-        let currentGameId = null;
-        let playerNumber = null; // 'p1' or 'p2'
+        const firebaseConfig = {
+            apiKey: "AIzaSyAydXymmuO9r9xFC5S8b-eMI-dLnbrcP1w",
+            authDomain: "code-breaker-duel.firebaseapp.com",
+            projectId: "code-breaker-duel",
+            storageBucket: "code-breaker-duel.appspot.com",
+            messagingSenderId: "165393867049",
+            appId: "1:165393867049:web:2d50c1c9073a38d4b28038",
+            measurementId: "G-NDKVEEE4YR"
+        };
 
-        function generateUserId() {
-            return 'user_' + Math.random().toString(36).substr(2, 9);
-        }
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        // DOM Elements
-        const setupView = document.getElementById('setup-view');
-        const codeSetupView = document.getElementById('code-setup-view');
-        const gameplayView = document.getElementById('gameplay-view');
-        const statusBar = document.getElementById('status-bar');
-        const setupMessage = document.getElementById('setup-message');
-        const codeSetupMessage = document.getElementById('code-setup-message');
-        const guessInput = document.getElementById('guess-input');
-        const submitGuessBtn = document.getElementById('submit-guess-btn');
-        const historyBody = document.getElementById('guess-history-body');
-        const modalContainer = document.getElementById('modal-container');
-        const modalTitle = document.getElementById('modal-title');
-        const modalMessage = document.getElementById('modal-message');
+        window.appState = {
+            username: '',
+            userId: 'user_' + Math.random().toString(36).substr(2, 9),
+            roomId: null,
+            playerNumber: null,
+            currentGame: null
+        };
 
-        // Utility Functions
-        function generateGameId() {
-            const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            let id = '';
-            for (let i = 0; i < 6; i++) {
-                id += chars.charAt(Math.floor(Math.random() * chars.length));
+        window.goBack = function() {
+            document.getElementById('landing-screen').classList.remove('hidden');
+            document.getElementById('room-screen').classList.add('hidden');
+            document.getElementById('lobby-screen').classList.add('hidden');
+        };
+
+        window.goToRoomSelect = function() {
+            const username = document.getElementById('username-input').value.trim();
+            if (!username) {
+                alert('Please enter your name');
+                return;
             }
-            return id;
-        }
+            window.appState.username = username;
+            document.getElementById('room-username').textContent = username;
+            document.getElementById('landing-screen').classList.add('hidden');
+            document.getElementById('room-screen').classList.remove('hidden');
+        };
 
-        function validateCode(code) {
-            if (code.length !== 4) return "Code must be exactly 4 digits.";
-            if (!/^\d{4}$/.test(code)) return "Code must contain only digits (0-9).";
-            const uniqueChars = new Set(code);
-            if (uniqueChars.size !== 4) return "All 4 digits must be unique.";
-            return null;
-        }
-        
-        function copyGameId() {
-            const gameIdElement = document.getElementById('current-game-id');
-            const gameId = gameIdElement.textContent;
+        window.createRoom = async function() {
+            const roomId = 'R' + Math.random().toString(36).substr(2, 5).toUpperCase();
+            window.appState.roomId = roomId;
+            window.appState.playerNumber = 'p1';
             
-            // Create a temporary input element
-            const tempInput = document.createElement('input');
-            tempInput.value = gameId;
-            document.body.appendChild(tempInput);
-            
-            // Select the text field
-            tempInput.select();
-            tempInput.setSelectionRange(0, 99999); // For mobile devices
-            
-            // Copy the text inside the text field
+            const roomRef = doc(db, 'rooms', roomId);
+            await setDoc(roomRef, {
+                id: roomId,
+                p1_id: window.appState.userId,
+                p1_name: window.appState.username,
+                p2_id: null,
+                p2_name: null,
+                status: 'waiting',
+                createdAt: Date.now()
+            });
+
+            enterLobby();
+        };
+
+        window.joinRoom = async function() {
+            const roomCode = document.getElementById('room-code-input').value.toUpperCase();
+            if (!roomCode || roomCode.length !== 6) {
+                document.getElementById('join-message').textContent = 'Invalid room code';
+                return;
+            }
+
             try {
-                const successful = document.execCommand('copy');
-                if (successful) {
-                    const originalText = gameIdElement.textContent;
-                    gameIdElement.textContent = 'Copied!';
-                    setTimeout(() => gameIdElement.textContent = originalText, 1500);
-                } else {
-                    console.error("Fallback copy method failed.");
-                }
-            } catch (err) {
-                console.error("Copy operation failed:", err);
-            }
-            
-            // Remove the temporary input element
-            document.body.removeChild(tempInput);
-        }
-        window.copyGameId = copyGameId; // Make it globally accessible for onclick
-
-        function setStatus(message, colorClass = 'bg-gray-200 text-gray-800') {
-            statusBar.className = `text-center p-3 mb-6 rounded-lg font-semibold ${colorClass} transition-all duration-300`;
-            statusBar.textContent = message;
-        }
-
-        // Core Game Logic: Calculate Bulls and Cows
-        function calculateFeedback(guess, secret) {
-            let bulls = 0;
-            let cows = 0;
-            
-            // 1. Calculate Bulls (Correct digit, correct position)
-            const secretArr = secret.split('');
-            const guessArr = guess.split('');
-
-            for (let i = 0; i < 4; i++) {
-                if (guessArr[i] === secretArr[i]) {
-                    bulls++;
-                    // Mark as used so they don't count towards cows
-                    secretArr[i] = null;
-                    guessArr[i] = null;
-                }
-            }
-
-            // 2. Calculate Cows (Correct digit, wrong position)
-            for (let i = 0; i < 4; i++) {
-                if (guessArr[i] !== null) { // If not already counted as a bull
-                    const matchIndex = secretArr.findIndex(s => s === guessArr[i]);
-                    if (matchIndex !== -1) {
-                        cows++;
-                        secretArr[matchIndex] = null; // Mark as used
-                    }
-                }
-            }
-
-            return { bulls, cows };
-        }
-
-        // --- Firebase Interaction Functions ---
-
-        async function createGame() {
-            try {
-                const gameId = generateGameId();
-                const gameRef = doc(db, 'games', gameId);
+                const roomSnap = await getDocs(query(collection(db, 'rooms'), where('id', '==', roomCode)));
                 
+                if (roomSnap.empty) {
+                    document.getElementById('join-message').textContent = 'Room not found';
+                    return;
+                }
+
+                const room = roomSnap.docs[0].data();
+                const roomRef = roomSnap.docs[0].ref;
+                
+                if (room.p1_id === window.appState.userId) {
+                    window.appState.playerNumber = 'p1';
+                } else if (room.p2_id === window.appState.userId) {
+                    window.appState.playerNumber = 'p2';
+                } else if (room.p2_id === null) {
+                    window.appState.playerNumber = 'p2';
+                    await updateDoc(roomRef, {
+                        p2_id: window.appState.userId,
+                        p2_name: window.appState.username,
+                        status: 'active'
+                    });
+                } else {
+                    document.getElementById('join-message').textContent = 'Room is full';
+                    return;
+                }
+
+                window.appState.roomId = roomCode;
+                enterLobby();
+            } catch (error) {
+                console.error('Error joining room:', error);
+                document.getElementById('join-message').textContent = 'Error joining room';
+            }
+        };
+
+        window.enterLobby = function() {
+            document.getElementById('room-screen').classList.add('hidden');
+            document.getElementById('lobby-screen').classList.remove('hidden');
+            document.getElementById('lobby-room-id').textContent = window.appState.roomId;
+            document.getElementById('lobby-your-name').textContent = window.appState.username;
+            
+            listenToRoom();
+        };
+
+        window.listenToRoom = function() {
+            const roomRef = doc(db, 'rooms', window.appState.roomId);
+            onSnapshot(roomRef, (doc) => {
+                if (doc.exists()) {
+                    const room = doc.data();
+                    const opponentName = window.appState.playerNumber === 'p1' ? room.p2_name : room.p1_name;
+                    document.getElementById('lobby-opponent-name').textContent = opponentName || 'Waiting...';
+                }
+            });
+        };
+
+        window.selectGame = function(gameType) {
+            window.appState.currentGame = gameType;
+            document.getElementById('lobby-screen').classList.add('hidden');
+            document.getElementById('game-container').classList.remove('hidden');
+            loadGame(gameType);
+        };
+
+        window.exitRoom = async function() {
+            if (confirm('Are you sure you want to exit this room?')) {
+                try {
+                    const roomRef = doc(db, 'rooms', window.appState.roomId);
+                    await deleteDoc(roomRef);
+                    window.appState.roomId = null;
+                    window.appState.playerNumber = null;
+                    document.getElementById('lobby-screen').classList.add('hidden');
+                    document.getElementById('game-container').classList.add('hidden');
+                    document.getElementById('landing-screen').classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error exiting room:', error);
+                }
+            }
+        };
+
+        window.backToLobby = async function() {
+            document.getElementById('game-container').classList.add('hidden');
+            document.getElementById('lobby-screen').classList.remove('hidden');
+        };
+
+        window.loadGame = function(gameType) {
+            switch(gameType) {
+                case 'codebreaker':
+                    loadCodeBreakerGame();
+                    break;
+                case 'tictactoe':
+                    loadTicTacToeGame();
+                    break;
+                case 'wavelength':
+                    loadWavelengthGame();
+                    break;
+                case 'stonepaper':
+                    loadStonePaperGame();
+                    break;
+                case 'fastfour':
+                    loadFastFourGame();
+                    break;
+            }
+        };
+
+        // ==================== CODE BREAKER GAME ====================
+        window.loadCodeBreakerGame = function() {
+            const container = document.getElementById('game-container');
+            container.innerHTML = `
+                <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-8 fade-in">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-indigo-600">🔐 Code Breaker</h2>
+                        <button onclick="backToLobby()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Back</button>
+                    </div>
+                    
+                    <div id="cb-status" class="bg-indigo-100 text-indigo-800 p-4 rounded-lg mb-6 font-semibold text-center">Loading...</div>
+
+                    <div id="cb-setup" class="mb-8">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-4">Enter Your Secret 4-Digit Code</h3>
+                        <div class="flex gap-3 mb-4">
+                            <input type="text" id="cb-code-input" maxlength="4" class="flex-grow p-3 border-2 border-gray-300 rounded-lg text-3xl tracking-widest text-center font-mono focus:border-indigo-500" placeholder="1234">
+                            <button onclick="cbSetCode()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg">Lock In</button>
+                        </div>
+                        <p id="cb-message" class="text-red-500 h-5"></p>
+                    </div>
+
+                    <div id="cb-gameplay" class="hidden">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div class="bg-indigo-50 p-6 rounded-lg border-2 border-indigo-300">
+                                <h4 class="font-bold text-lg mb-4">Make Your Guess</h4>
+                                <div class="flex gap-3 mb-4">
+                                    <input type="text" id="cb-guess" maxlength="4" class="flex-grow p-3 border-2 border-gray-300 rounded-lg text-2xl tracking-widest text-center font-mono">
+                                    <button onclick="cbSubmitGuess()" id="cb-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg disabled:opacity-50" disabled>Submit</button>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg mb-4">History</h4>
+                                <div class="max-h-80 overflow-y-auto bg-gray-50 rounded-lg p-4">
+                                    <table class="w-full text-sm"><tbody id="cb-history"></tbody></table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            window.cbState = {
+                roomId: window.appState.roomId,
+                playerId: window.appState.userId,
+                playerNum: window.appState.playerNumber,
+                secret: null,
+                maxTurns: 10,
+                myGuesses: [],
+                oppGuesses: [],
+                myTurns: 0,
+                oppTurns: 0,
+                gameEnded: false
+            };
+
+            cbInitialize();
+        };
+
+        window.cbInitialize = async function() {
+            const gameRef = doc(db, 'cbgames', window.appState.roomId);
+            const existing = await getDocs(query(collection(db, 'cbgames'), where('roomId', '==', window.appState.roomId)));
+            
+            if (existing.empty) {
                 await setDoc(gameRef, {
-                    id: gameId,
-                    p1_id: userId,
-                    p2_id: null,
+                    roomId: window.appState.roomId,
                     p1_secret: null,
                     p2_secret: null,
                     p1_guesses: [],
                     p2_guesses: [],
-                    turn: 'p1', // P1 always goes first
-                    status: 'waiting',
+                    turn: 'p1',
+                    status: 'setup',
                     createdAt: Date.now()
                 });
-
-                joinGame(gameId);
-
-            } catch (error) {
-                console.error("Error creating game:", error);
-                setupMessage.textContent = "Error creating game. Try again.";
             }
-        }
-
-        async function joinGame(id) {
-            const gameIdInput = document.getElementById('join-game-id').value.toUpperCase();
-            currentGameId = id || gameIdInput;
-
-            if (!currentGameId || currentGameId.length !== 6) {
-                setupMessage.textContent = "Please enter a valid 6-character Game ID.";
-                return;
-            }
-
-            const gameRef = doc(db, 'games', currentGameId);
             
-            try {
-                // Check if the game exists and if we are player 1 or 2
-                const q = query(collection(db, 'games'), where('id', '==', currentGameId));
-                const gameSnap = await getDocs(q);
+            cbListen();
+        };
 
-                if (gameSnap.empty) {
-                    setupMessage.textContent = `Game ID "${currentGameId}" not found.`;
+        window.cbListen = function() {
+            const gameRef = doc(db, 'cbgames', window.appState.roomId);
+            onSnapshot(gameRef, (doc) => {
+                if (!doc.exists()) return;
+                const game = doc.data();
+                const opp = window.cbState.playerNum === 'p1' ? 'p2' : 'p1';
+                
+                if (!game[`${window.cbState.playerNum}_secret`]) {
+                    document.getElementById('cb-setup').classList.remove('hidden');
+                    document.getElementById('cb-gameplay').classList.add('hidden');
+                    document.getElementById('cb-status').textContent = 'Enter your secret code';
                     return;
                 }
                 
-                const gameData = gameSnap.docs[0].data();
-                
-                if (gameData.p1_id === userId) {
-                    playerNumber = 'p1';
-                } else if (gameData.p2_id === userId) {
-                    playerNumber = 'p2';
-                } else if (gameData.p2_id === null) {
-                    // Claim Player 2 spot
-                    await updateDoc(gameRef, {
-                        p2_id: userId,
-                        status: 'setup'
-                    });
-                    playerNumber = 'p2';
-                } else {
-                    setupMessage.textContent = "This game is full.";
+                if (!game[`${opp}_secret`]) {
+                    document.getElementById('cb-status').textContent = 'Waiting for opponent...';
                     return;
                 }
+                
+                document.getElementById('cb-setup').classList.add('hidden');
+                document.getElementById('cb-gameplay').classList.remove('hidden');
+                
+                window.cbState.myGuesses = game[`${window.cbState.playerNum}_guesses`] || [];
+                window.cbState.oppGuesses = game[`${opp}_guesses`] || [];
+                window.cbState.myTurns = window.cbState.myGuesses.length;
+                window.cbState.oppTurns = window.cbState.oppGuesses.length;
+                
+                const isMyTurn = game.turn === window.cbState.playerNum;
+                document.getElementById('cb-btn').disabled = !isMyTurn;
+                document.getElementById('cb-status').textContent = isMyTurn ? `Your Turn (${window.cbState.myTurns}/${window.cbState.maxTurns})` : `Opponent's Turn (${window.cbState.oppTurns}/${window.cbState.maxTurns})`;
+                
+                cbRenderHistory();
+                
+                if (game.status && (game.status.includes('_won') || game.status === 'draw')) {
+                    cbShowEnd(game, game[`${opp}_secret`]);
+                }
+            });
+        };
 
-                // Transition to code setup view
-                document.getElementById('current-game-id').textContent = currentGameId;
-                document.getElementById('my-user-id').textContent = userId;
-                setupView.classList.add('hidden');
-                codeSetupView.classList.remove('hidden');
-
-                listenToGame(gameRef);
-
-            } catch (error) {
-                console.error("Error joining game:", error);
-                setupMessage.textContent = "Error joining game. Check console for details.";
-            }
-        }
-
-        async function setSecretCode() {
-            const secretCode = document.getElementById('secret-code-input').value;
-            const validationError = validateCode(secretCode);
-            if (validationError) {
-                codeSetupMessage.textContent = validationError;
-                return;
-            }
-            codeSetupMessage.textContent = '';
-            
-            const gameRef = doc(db, 'games', currentGameId);
-            
-            try {
-                const updateData = {};
-                updateData[`${playerNumber}_secret`] = secretCode;
-
-                await updateDoc(gameRef, updateData);
-
-                setStatus("Code locked in! Waiting for the other player...", 'bg-yellow-100 text-yellow-800');
-                document.getElementById('secret-code-input').disabled = true;
-                document.getElementById('set-code-btn').disabled = true;
-
-            } catch (error) {
-                console.error("Error setting code:", error);
-                codeSetupMessage.textContent = "Error setting code. Try again.";
-            }
-        }
-
-        async function submitGuess() {
-            const guess = guessInput.value;
-            const validationError = validateCode(guess);
-            if (validationError) {
-                setStatus(validationError, 'bg-red-100 text-red-800');
+        window.cbSetCode = async function() {
+            const code = document.getElementById('cb-code-input').value;
+            if (code.length !== 4 || !/^\d{4}$/.test(code) || new Set(code).size !== 4) {
+                document.getElementById('cb-message').textContent = 'Must be 4 unique digits';
                 return;
             }
             
-            const gameRef = doc(db, 'games', currentGameId);
-
-            try {
-                // Get current game state to find the opponent's secret
-                const q = query(collection(db, 'games'), where('id', '==', currentGameId));
-                const gameSnap = await getDocs(q);
-                const gameData = gameSnap.docs[0].data();
-
-                const opponentNumber = playerNumber === 'p1' ? 'p2' : 'p1';
-                const opponentSecret = gameData[`${opponentNumber}_secret`];
-                
-                if (!opponentSecret) {
-                     setStatus("Opponent hasn't set their code yet!", 'bg-red-100 text-red-800');
-                     return;
-                }
-
-                const { bulls, cows } = calculateFeedback(guess, opponentSecret);
-                
-                const newGuess = {
-                    guess: guess,
-                    bulls: bulls,
-                    cows: cows,
-                    player: playerNumber,
-                    timestamp: Date.now()
-                };
-
-                const nextTurn = opponentNumber;
-                let newStatus = gameData.status;
-                let winner = null;
-
-                if (bulls === 4) {
-                    newStatus = `${playerNumber}_won`;
-                    winner = playerNumber;
-                }
-
-                const updatePayload = {
-                    [`${playerNumber}_guesses`]: arrayUnion(newGuess),
-                    turn: nextTurn,
-                    status: newStatus,
-                };
-
-                await updateDoc(gameRef, updatePayload);
-                
-                guessInput.value = ''; // Clear input
-                submitGuessBtn.disabled = true;
-
-            } catch (error) {
-                console.error("Error submitting guess:", error);
-                setStatus("An error occurred during guess submission.", 'bg-red-100 text-red-800');
-            }
-        }
-
-        // --- Real-time Listener and Renderer ---
-
-        function listenToGame(gameRef) {
-            onSnapshot(gameRef, (docSnap) => {
-                if (!docSnap.exists()) {
-                    setStatus("Game was deleted.", 'bg-red-500 text-white');
-                    return;
-                }
-
-                const game = docSnap.data();
-                const opponentNumber = playerNumber === 'p1' ? 'p2' : 'p1';
-                const mySecretIsSet = !!game[`${playerNumber}_secret`];
-                const opponentSecretIsSet = !!game[`${opponentNumber}_secret`];
-
-                // 1. Handle Game Flow
-                if (game.status === 'waiting') {
-                    if (playerNumber === 'p1') {
-                        setStatus("Waiting for Player 2 to join (Share Game ID above).", 'bg-yellow-100 text-yellow-800');
-                    } else if (playerNumber === 'p2') {
-                        setStatus("You are Player 2. Set your code!", 'bg-yellow-100 text-yellow-800');
-                    }
-                    return; // Stay in setup view or code setup view
-                } 
-
-                if (game.status === 'setup' || (mySecretIsSet && !opponentSecretIsSet)) {
-                     // Hide setup, show code setup
-                    setupView.classList.add('hidden');
-                    codeSetupView.classList.remove('hidden');
-                    gameplayView.classList.add('hidden');
-
-                    if (mySecretIsSet && opponentSecretIsSet) {
-                        // Both codes are set, proceed to gameplay
-                        setStatus("Codes are set! Game starting...", 'bg-green-100 text-green-800');
-                        // Don't return here - let it transition to gameplay below
-                    } else if (mySecretIsSet) {
-                        setStatus("Code locked in! Waiting for opponent to set their code.", 'bg-yellow-100 text-yellow-800');
-                        return; // Stay in code setup until opponent is ready
-                    } else {
-                        setStatus("Set your secret code to begin.", 'bg-indigo-100 text-indigo-800');
-                        return; // Stay in code setup until we set our code
-                    }
-                }
-
-                // If both codes are set, transition to gameplay
-                if (mySecretIsSet && opponentSecretIsSet) {
-                    // Transition to gameplay
-                    codeSetupView.classList.add('hidden');
-                    gameplayView.classList.remove('hidden');
-                }
-
-                // 2. Handle Game Status (Win/Loss)
-                if (game.status.includes('_won')) {
-                    modalContainer.classList.remove('hidden');
-                    if (game.status === `${playerNumber}_won`) {
-                        modalTitle.textContent = "YOU WON!";
-                        modalMessage.textContent = `Congratulations! You cracked the code (${game[`${opponentNumber}_secret`]}) and are the Code Breaker Champion!`;
-                        modalTitle.className = 'text-3xl font-bold mb-4 text-green-600';
-                    } else {
-                        modalTitle.textContent = "YOU LOST!";
-                        modalMessage.textContent = `The opponent cracked your code! Their secret was: ${game[`${opponentNumber}_secret`]}. Try again!`;
-                        modalTitle.className = 'text-3xl font-bold mb-4 text-red-600';
-                    }
-                    submitGuessBtn.disabled = true;
-                    guessInput.disabled = true;
-                    return;
-                }
-
-                // 3. Handle Turn and UI State
-                const isMyTurn = game.turn === playerNumber;
-
-                if (isMyTurn) {
-                    setStatus("Your Turn! Enter your 4-digit guess below.", 'bg-green-200 text-green-800');
-                    submitGuessBtn.disabled = false;
-                    guessInput.disabled = false;
-                } else {
-                    setStatus("Opponent's Turn. Awaiting their move...", 'bg-indigo-200 text-indigo-800');
-                    submitGuessBtn.disabled = true;
-                    guessInput.disabled = true;
-                }
-
-
-                // 4. Render History
-                renderHistory(game, playerNumber, opponentNumber);
-            });
-        }
-
-        function renderHistory(game, myPlayer, oppPlayer) {
-            // Combine both players' guesses and sort by timestamp
-            const allGuesses = [
-                ...game.p1_guesses.map(g => ({ ...g, player: 'p1' })),
-                ...game.p2_guesses.map(g => ({ ...g, player: 'p2' }))
-            ].sort((a, b) => a.timestamp - b.timestamp);
-
-            historyBody.innerHTML = '';
+            window.cbState.secret = code;
+            const gameRef = doc(db, 'cbgames', window.appState.roomId);
+            const update = {};
+            update[`${window.cbState.playerNum}_secret`] = code;
+            await updateDoc(gameRef, update);
             
-            // Render history for the player whose code was guessed
-            allGuesses.forEach((g, index) => {
-                const turnNumber = Math.ceil((index + 1) / 2);
-                const row = historyBody.insertRow();
-                row.className = g.player === myPlayer ? 'bg-indigo-50 font-medium' : 'bg-white';
+            document.getElementById('cb-code-input').disabled = true;
+        };
 
-                const turnCell = row.insertCell();
-                turnCell.textContent = turnNumber;
-                turnCell.className = 'px-4 py-2 text-sm text-gray-800';
-                
-                const guessCell = row.insertCell();
-                guessCell.textContent = g.guess;
-                guessCell.className = 'px-4 py-2 text-sm font-mono text-center tracking-widest';
-                
-                const bullsCell = row.insertCell();
-                bullsCell.innerHTML = `<span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-green-100 text-green-700 font-bold">${g.bulls}</span>`;
-                bullsCell.className = 'px-4 py-2 text-sm text-center';
-                
-                const cowsCell = row.insertCell();
-                cowsCell.innerHTML = `<span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-yellow-100 text-yellow-700 font-bold">${g.cows}</span>`;
-                cowsCell.className = 'px-4 py-2 text-sm text-center';
-            });
-        }
-
-        // --- Event Listeners and Initialization ---
-
-        function setupEventListeners() {
-            document.getElementById('create-game-btn').addEventListener('click', createGame);
-            document.getElementById('join-game-btn').addEventListener('click', () => joinGame());
-            document.getElementById('set-code-btn').addEventListener('click', setSecretCode);
-            document.getElementById('submit-guess-btn').addEventListener('click', submitGuess);
-
-            // Input validation and formatting
-            document.getElementById('secret-code-input').addEventListener('input', (e) => {
-                e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                if (e.target.value.length === 4) {
-                    codeSetupMessage.textContent = validateCode(e.target.value) || '';
-                }
-            });
-            document.getElementById('guess-input').addEventListener('input', (e) => {
-                e.target.value = e.target.value.replace(/[^0-9]/g, '');
-            });
-            document.getElementById('join-game-id').addEventListener('input', (e) => {
-                e.target.value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            });
-        }
-
-        async function initializeAppAndAuth() {
-            console.log("Firebase Config:", firebaseConfig);
+        window.cbSubmitGuess = async function() {
+            const guess = document.getElementById('cb-guess').value;
+            if (guess.length !== 4 || !/^\d{4}$/.test(guess) || new Set(guess).size !== 4) return;
+            if (window.cbState.myTurns >= window.cbState.maxTurns) return;
             
-            if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
-                 setupMessage.textContent = "Firebase configuration is missing or invalid. Please check the script block.";
-                 console.error("Firebase config is required but missing. You need to update the 'myLocalConfig' object in the script.");
-                 return;
+            const gameSnap = await getDocs(query(collection(db, 'cbgames'), where('roomId', '==', window.appState.roomId)));
+            const game = gameSnap.docs[0].data();
+            const opp = window.cbState.playerNum === 'p1' ? 'p2' : 'p1';
+            const oppSecret = game[`${opp}_secret`];
+            
+            const {bulls, cows} = cbCalcFeedback(guess, oppSecret);
+            const newGuess = {guess, bulls, cows, timestamp: Date.now()};
+            
+            let status = 'active';
+            if (bulls === 4) status = `${window.cbState.playerNum}_won`;
+            else if (window.cbState.myTurns + 1 >= window.cbState.maxTurns && window.cbState.oppTurns >= window.cbState.maxTurns) {
+                const oppWon = game[`${opp}_guesses`].some(g => g.bulls === 4);
+                if (!oppWon) status = 'draw';
             }
+            
+            const gameRef = doc(db, 'cbgames', window.appState.roomId);
+            await updateDoc(gameRef, {
+                [`${window.cbState.playerNum}_guesses`]: arrayUnion(newGuess),
+                turn: opp,
+                status: status
+            });
+            
+            document.getElementById('cb-guess').value = '';
+            document.getElementById('cb-btn').disabled = true;
+        };
 
-            try {
-                console.log("Initializing Firebase app...");
-                app = initializeApp(firebaseConfig);
-                console.log("App initialized:", app);
-                
-                db = getFirestore(app);
-                console.log("Firestore initialized:", db);
-                
-                // Generate a user ID for this session
-                userId = generateUserId();
-                isAuthReady = true;
-                
-                console.log("User initialized with ID:", userId);
-                setStatus("Ready. Create or join a game.", 'bg-gray-200 text-gray-800');
-                setupEventListeners();
-
-            } catch (error) {
-                console.error("Firebase Initialization Error:", error);
-                console.error("Error Code:", error.code);
-                console.error("Error Message:", error.message);
-                setupMessage.textContent = `Initialization Error: ${error.code || 'Unknown'} - ${error.message}`;
+        window.cbCalcFeedback = function(guess, secret) {
+            let bulls = 0, cows = 0;
+            const sa = secret.split('');
+            const ga = guess.split('');
+            
+            for (let i = 0; i < 4; i++) {
+                if (ga[i] === sa[i]) { bulls++; sa[i] = null; ga[i] = null; }
             }
-        }
+            for (let i = 0; i < 4; i++) {
+                if (ga[i] !== null && sa.includes(ga[i])) { cows++; sa[sa.indexOf(ga[i])] = null; }
+            }
+            return {bulls, cows};
+        };
 
-        initializeAppAndAuth();
+        window.cbRenderHistory = function() {
+            const hist = document.getElementById('cb-history');
+            hist.innerHTML = window.cbState.myGuesses.map((g, i) => 
+                `<tr class="border-t"><td class="p-2">${i+1}</td><td class="p-2 font-mono font-bold">${g.guess}</td><td class="p-2 text-center text-green-600 font-bold">${g.bulls}</td><td class="p-2 text-center text-yellow-600 font-bold">${g.cows}</td></tr>`
+            ).join('');
+        };
+
+        window.cbShowEnd = function(game, oppSecret) {
+            if (window.cbState.gameEnded) return;
+            window.cbState.gameEnded = true;
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+            let title = '', color = '';
+            
+            if (game.status === `${window.cbState.playerNum}_won`) {
+                title = '🎉 YOU WIN!';
+                color = 'text-green-600';
+            } else if (game.status === 'draw') {
+                title = '🤝 DRAW!';
+                color = 'text-yellow-600';
+            } else {
+                title = '😢 YOU LOSE!';
+                color = 'text-red-600';
+            }
+            
+            modal.innerHTML = `<div class="bg-white rounded-2xl p-8 max-w-md text-center">
+                <h3 class="text-3xl font-bold mb-4 ${color}">${title}</h3>
+                <p class="text-gray-700 mb-4">Opponent's code: <span class="font-mono font-bold">${oppSecret}</span></p>
+                <button onclick="backToLobby()" class="bg-purple-600 text-white font-bold py-2 px-6 rounded-lg">Back to Lobby</button>
+            </div>`;
+            document.body.appendChild(modal);
+        };
+
+        // ==================== OTHER GAMES (STUBS) ====================
+        window.loadTicTacToeGame = function() {
+            alert('Tic Tac Toe - Coming Soon!');
+        };
+        window.loadWavelengthGame = function() {
+            alert('Wavelength - Coming Soon!');
+        };
+        window.loadStonePaperGame = function() {
+            alert('Stone Paper Scissor - Coming Soon!');
+        };
+        window.loadFastFourGame = function() {
+            alert('Fast Four - Coming Soon!');
+        };
+        window.startWar = function() {
+            alert('Declare a War - Coming Soon!');
+        };
+
+        console.log('Ka re? Platform Ready');
     </script>
 </body>
 </html>
